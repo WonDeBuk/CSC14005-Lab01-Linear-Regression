@@ -1,0 +1,13 @@
+{
+  "name": "CSC14005 - Lab 01: Linear Regression",
+  "main_doc": "main.tex",
+  "engine": "xetex",
+  "checkpoints": {
+    "mode": "engine_dependencies"
+  },
+  "color": "#fbf8cc",
+  "kind": "",
+  "exports": [],
+  "hidden": false,
+  "forked_from": null
+}
