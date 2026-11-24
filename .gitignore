@@ -1,0 +1,41 @@
+# Oleafly workspace (build cache, attachments: course PDFs, sample reports)
+.oleafly/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Data and artifacts (dataset is linked in data/README.md, models are re-trainable)
+data/raw/*
+data/processed/*
+!data/**/.gitkeep
+models/*
+!models/.gitkeep
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.lof
+*.lot
+_minted-*/
+
+# Secrets and OS
+.env
+.DS_Store
+Thumbs.db

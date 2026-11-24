@@ -1,14 +1,93 @@
-\documentclass[11pt]{article}
-\usepackage[T1]{fontenc}
+% Báo cáo Lab 01 - Linear Regression (CSC14005). Biên dịch bằng XeLaTeX.
+% Khuyến nghị 10-20 trang. Mọi số liệu lấy từ models/*.csv; mọi trích dẫn có trong references.bib.
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[numbers]{natbib}
 \usepackage{hyperref}
+\graphicspath{{figures/}}
 
-\title{Untitled}
-\author{}
+\renewcommand{\contentsname}{Mục lục}
+\renewcommand{\listfigurename}{Danh mục hình}
+\renewcommand{\listtablename}{Danh mục bảng}
+\renewcommand{\refname}{Tài liệu tham khảo}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
 
 \begin{document}
-\maketitle
 
-\section{Introduction}
-Write your \LaTeX{} here.
+\begin{titlepage}
+  \centering
+  {\large ĐẠI HỌC QUỐC GIA TP.HCM\\TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\\KHOA CÔNG NGHỆ THÔNG TIN\par}
+  \vspace{3cm}
+  {\LARGE\bfseries BÁO CÁO ĐỒ ÁN LAB 01\par}
+  \vspace{0.5cm}
+  {\Large Đề tài: % TODO(team): tên bài toán
+  \par}
+  \vspace{0.5cm}
+  {\large Môn học: CSC14005 -- Nhập môn học máy\par}
+  \vfill
+  \begin{flushleft}
+    \textbf{Nhóm:} % TODO(team): mã nhóm
+    \\[0.3cm]
+    \textbf{Sinh viên thực hiện:}\\
+    % TODO(team): Họ tên -- MSSV
+  \end{flushleft}
+  \vfill
+  {\today\par}
+\end{titlepage}
+
+\tableofcontents
+\listoftables
+\listoffigures
+\clearpage
+
+\section{Giới thiệu}
+\subsection{Phân công công việc}
+% TODO(team): bảng thành viên - nhiệm vụ - mô hình phụ trách - mức độ hoàn thành.
+
+\subsection{Sử dụng công cụ AI}
+% TODO(team): nêu rõ công cụ AI đã dùng, cho việc gì, và cách nhóm kiểm tra lại nội dung.
+
+\section{Bài toán và động lực}
+% 3.1: động lực chọn bài toán; mục tiêu dự đoán; biến mục tiêu; các biến đầu vào.
+
+\section{Dữ liệu}
+\subsection{Nguồn và mô tả dữ liệu}
+% Nguồn (link), giấy phép, số mẫu, bảng mô tả các biến.
+\subsection{Phân tích khám phá dữ liệu}
+% Phân phối biến mục tiêu, tương quan, ngoại lệ, đa cộng tuyến. Hình từ notebooks/01_eda.ipynb.
+\subsection{Tiền xử lý}
+% Xử lý thiếu, mã hoá, chuẩn hoá, biến đổi; chia train/test (80/20, seed 42).
+
+\section{Thiết kế mô hình}
+\subsection{Cơ sở lý thuyết}
+% OLS, Ridge, Lasso, Elastic Net, hàm cơ sở đa thức, biến đổi log mục tiêu, Huber.
+\subsection{Các mô hình xây dựng}
+% Mỗi mô hình: biến sử dụng, biến đổi, siêu tham số, lý do lựa chọn (yêu cầu 3.2).
+
+\section{Đánh giá và so sánh}
+\subsection{Chỉ số đánh giá}
+% MAE, MSE, RMSE, R^2, cross-validation.
+\subsection{Kết quả}
+% Bảng từ models/metrics.csv; phân tích phần dư.
+\subsection{Diễn giải hệ số}
+% Chỉ dựa trên kết quả mô hình (yêu cầu 3.3), không dùng kiến thức miền bên ngoài.
+
+\section{Ứng dụng}
+% Tính năng, giao diện (ảnh chụp màn hình), đầu vào/đầu ra, cách tích hợp mô hình đã huấn luyện, link video demo.
+
+\section{Kết luận}
+% Kết quả chính, hạn chế, hướng cải tiến.
+
+\nocite{*}
+\bibliographystyle{plainnat}
+\bibliography{references}
 
 \end{document}
