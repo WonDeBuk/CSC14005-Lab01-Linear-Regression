@@ -20,7 +20,7 @@ Tổng hợp từ moodboard của nhóm ("Mission LR-01", [artifact](https://cla
 | Phương sai thay đổi | Breusch–Pagan bác bỏ; dùng SE HC3 và bootstrap; WLS và log không sửa được | 09, 12 |
 | So sánh CV | t-test hiệu chỉnh Nadeau–Bengio | 10.2 |
 | Mô hình phi tuyến | Gaussian Process chỉ là mốc trần, không tính vào số mô hình | 12 |
-| Khung báo cáo | 8 chương (`sections/01–08`), 18 trang PDF (phần thân 15 trang, đạt khuyến nghị 10–20 trang); toàn bộ biểu đồ dùng pgfplots (`figures/tikz/`), số liệu nạp tự động từ `tables/numbers.tex` | 16 |
+| Khung báo cáo | 8 chương (`sections/01–08`), 23 trang PDF (mục tiêu 20–30 trang theo yêu cầu cập nhật); đủ biểu đồ trước/sau P2, P5 (`VEHICLECLASS` 16→5), P6 (`TRANSMISSION`), P8 (hybrid), toàn bộ biểu đồ dùng pgfplots (`figures/tikz/`) với legend ngoài vùng dữ liệu, số liệu nạp tự động từ `tables/numbers.tex` | 16 |
 | Ứng dụng | CO₂ Studio (React + three.js, xưởng xe pixel), mô hình chạy trên trình duyệt; bỏ bản Streamlit. Giao diện theo phong cách "Orbital Drift" của moodboard (nền vũ trụ tối, panel HUD, Space Grotesk, Be Vietnam Pro, JetBrains Mono) | 01, 14 |
 | Hosting | S3 + CloudFront, viết bằng Terraform; không dùng EC2 hay Lambda vì không có phần máy chủ | — |
 

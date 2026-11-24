@@ -1,9 +1,10 @@
 % Fig 09: predicted CO2 vs engine size in M8b for four vehicle profiles.
+% Legend cleanly outside below x-axis.
 \begin{tikzpicture}
-\begin{axis}[rpt, width=0.86\textwidth, height=4.4cm,
+\begin{axis}[rpt, width=0.90\textwidth, height=5.5cm,
   title={Tương tác dung tích động cơ $\times$ nhóm xe trong M8b (cố định 6 xi-lanh, xăng thường, AS6)},
   xlabel={Dung tích động cơ (L)}, ylabel={\COtwo{} dự đoán (g/km)}, xmin=1.5, xmax=6.2,
-  legend pos=north west]
+  legend style={at={(0.5,-0.27)}, anchor=north, legend columns=2, column sep=8pt}]
   \addplot[name path=vh, draw=none, forget plot] table[x=eng, y=hi] {\figdata{fig09-van}};
   \addplot[name path=vl, draw=none, forget plot] table[x=eng, y=lo] {\figdata{fig09-van}};
   \addplot[cnavy, fill opacity=0.14, forget plot] fill between[of=vh and vl];

@@ -50,7 +50,7 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 | `sections/` | 8 chương báo cáo (`01-gioi-thieu.tex` … `08-ket-luan.tex`) |
 | `tables/` | Các bảng LaTeX và `numbers.tex` (toàn bộ sinh tự động từ `analysis/analyze.py`) |
 | `figures/` | Biểu đồ pgfplots trong `figures/tikz/`, dữ liệu trong `figures/data/`, ảnh `logo-hcmus.png` và `app-desktop.png` |
-| `main.tex`, `references.bib` | Báo cáo (pdfLaTeX, 11pt, 10–20 trang, tiếng Việt bằng vntex T5; không dùng fontspec) |
+| `main.tex`, `references.bib` | Báo cáo (pdfLaTeX, 11pt, 20–30 trang, tiếng Việt bằng vntex T5; không dùng fontspec) |
 
 ## Lệnh
 
@@ -72,6 +72,6 @@ latexmk main.tex                       # biên dịch báo cáo bằng pdfLaTeX 
 - Tiền xử lý nằm **trong** `Pipeline` để không rò rỉ từ tập test.
 - Thêm mô hình: thêm một `ModelSpec` vào `MODELS` (kèm mô tả lý do); công thức statsmodels được sinh tự động nếu `ols=True`. Chạy lại `pytest`.
 - Biểu đồ trong báo cáo vẽ bằng pgfplots (`figures/tikz/`); dữ liệu sinh bằng `python -m analysis.plot_data` vào `figures/data/`, không chỉnh tay.
-- Báo cáo PDF giữ trong khoảng khuyến nghị **10–20 trang**, biên dịch sạch không có `Overfull \hbox` > 5pt hay tham chiếu `??`.
+- Báo cáo PDF giữ trong khoảng **20–30 trang** (theo yêu cầu mới của nhóm để trình bày thoáng các bảng và biểu đồ trước/sau), biên dịch sạch không có `Overfull \hbox` > 5pt hay tham chiếu `??`; mọi chú giải (legend) đặt ngoài vùng dữ liệu để không che điểm/đường.
 - Báo cáo bằng tiếng Việt; tên biến, code, commit message bằng tiếng Anh.
 - Mỗi thay đổi đi qua branch + pull request, có ít nhất một thành viên khác review.

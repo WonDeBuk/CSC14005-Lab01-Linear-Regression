@@ -1,12 +1,14 @@
 % Fig 11: OLS / HC3 confidence vs Bayesian credible intervals, and prior sensitivity.
+% Legends cleanly outside below each panel.
 \begin{tikzpicture}
-\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.75cm}, rpt, height=5.1cm]
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.8cm}, rpt, height=5.8cm]
 \nextgroupplot[title={(a) KTC (OLS, HC3) và KĐTin (M6)}, width=0.43\textwidth, xgrid,
   xlabel={Ước lượng hệ số (g/km)}, y dir=reverse, ymin=-0.6, ymax=9.6,
   ytick={0,...,9},
   yticklabels={Thân: Van \& đặc dụng, Thân: Bán tải, Thân: SUV, Dung tích (/L), Xăng cao cấp,
                Số xi-lanh, Số cấp hộp số, Hộp số CVT (AV), Nhiên liệu E85, Hybrid},
-  legend pos=south east, legend image post style={mark=none}]
+  legend style={at={(0.5,-0.22)}, anchor=north, legend columns=2, column sep=4pt},
+  legend image post style={mark=none}]
   \draw[csubtle, dashed] (axis cs:0,-0.6) -- (axis cs:0,9.6);
   \addplot[draw=none, mark=none, forget plot] table[x=est, y=pos] {\figdata{fig11-ci}};
   \addplot[cblue, line width=1.2pt, draw=none, mark=none,
@@ -30,7 +32,8 @@
   \addplot[only marks, mark=*, mark size=1.4pt, cink, forget plot] table[x=est, y=pos] {\figdata{fig11-ci}};
 \nextgroupplot[title={(b) Độ nhạy hậu nghiệm theo $\tau$}, width=0.39\textwidth, xmode=log,
   xlabel={Độ lệch chuẩn prior $\tau$ (đơn vị $\sigma$, thang log)},
-  ylabel={Hệ số dung tích động cơ (g/km/L)}, legend pos=south east]
+  ylabel={Hệ số dung tích động cơ (g/km/L)},
+  legend style={at={(0.5,-0.22)}, anchor=north, legend columns=1}]
   \addplot[name path=fh, draw=none, forget plot] table[x=tau, y=hi] {\figdata{fig11-prior-full}};
   \addplot[name path=fl, draw=none, forget plot] table[x=tau, y=lo] {\figdata{fig11-prior-full}};
   \addplot[cnavy, fill opacity=0.14, forget plot] fill between[of=fh and fl];

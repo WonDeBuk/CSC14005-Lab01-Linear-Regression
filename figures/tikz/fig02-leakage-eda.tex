@@ -1,22 +1,26 @@
 % Fig 02: leakage through fuel consumption, and CO2 vs engine size by body group.
+% Legends placed outside below the axes so no data points are obscured.
 \begin{tikzpicture}
-\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.6cm}, pair]
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.7cm},
+  rpt, width=0.47\textwidth, height=5.5cm]
 \nextgroupplot[title={(a) Rò rỉ qua mức tiêu thụ nhiên liệu},
   xlabel={Tiêu thụ nhiên liệu kết hợp (L/100 km)}, ylabel={Phát thải \COtwo{} (g/km)},
-  legend pos=north west]
+  ymin=80, ymax=530,
+  legend style={at={(0.5,-0.25)}, anchor=north, legend columns=2, column sep=4pt}]
   \addplot[dot, cfuel-D] table[x=fc, y=co2] {\figdata{fig02-leak-D}};
-  \addlegendentry{Diesel (tỉ số $\approx$ \ratioD)}
+  \addlegendentry{Diesel ($\approx$ \ratioD)}
   \addplot[dot, cfuel-X] table[x=fc, y=co2] {\figdata{fig02-leak-X}};
   \addlegendentry{Xăng thường (\ratioX)}
   \addplot[dot, cfuel-Z] table[x=fc, y=co2] {\figdata{fig02-leak-Z}};
   \addlegendentry{Xăng cao cấp (\ratioZ)}
   \addplot[dot, cfuel-E] table[x=fc, y=co2] {\figdata{fig02-leak-E}};
   \addlegendentry{Ethanol E85 (\ratioE)}
-  \node[infobox, anchor=south east] at (rel axis cs:0.98,0.03)
+  \node[infobox, anchor=north west] at (rel axis cs:0.03,0.97)
     {OLS tương tác nhiên liệu:\\ $R^2_{\text{test}} = \leakRtwo$\\ RMSE $= \leakRmse$ g/km};
 \nextgroupplot[title={(b) \COtwo{} theo dung tích và nhóm thân xe},
   xlabel={Dung tích động cơ (L)}, ylabel={Phát thải \COtwo{} (g/km)},
-  xmax=9.6, ymin=60, legend columns=2, legend pos=south east]
+  xmax=9.0, ymin=80, ymax=530,
+  legend style={at={(0.5,-0.25)}, anchor=north, legend columns=3, column sep=3pt}]
   \addplot[dot, cbody-small] table[x=eng, y=co2] {\figdata{fig02-body-small}};
   \addlegendentry{Xe nhỏ}
   \addplot[dot, cbody-midlarge] table[x=eng, y=co2] {\figdata{fig02-body-midlarge}};
@@ -26,9 +30,9 @@
   \addplot[dot, cbody-pickup] table[x=eng, y=co2] {\figdata{fig02-body-pickup}};
   \addlegendentry{Bán tải}
   \addplot[dot, cbody-van] table[x=eng, y=co2] {\figdata{fig02-body-van}};
-  \addlegendentry{Van \& đặc dụng}
+  \addlegendentry{Van \& ĐD}
   \addplot[cink, dashed, thick, domain=\pvEngMin:\pvEngMax, samples=2]
     {\pvMOneIntercept + \pvMOneSlope*x};
-  \addlegendentry{Hồi quy đơn M1}
+  \addlegendentry{Hồi quy M1}
 \end{groupplot}
 \end{tikzpicture}

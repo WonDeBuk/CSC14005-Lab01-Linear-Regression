@@ -46,7 +46,7 @@ from linreg import config
 from linreg.bayes import NIGRegression
 from linreg.data import load_dataset, load_frame
 from linreg.evaluate import cv_rmse_folds, nadeau_bengio_test
-from linreg.features import BODY_LABELS, FUEL_LABELS, TRANS_LABELS
+from linreg.features import BODY_GROUPS, BODY_LABELS, FUEL_LABELS, TRANS_LABELS
 from linreg.inference import fit_ols, partial_f_test
 from linreg.models import MODELS, build_model
 from linreg.train import train_all
@@ -115,6 +115,11 @@ macro("nTest", vn(len(test), 0))
 macro("nCols", str(raw.shape[1]))
 macro("nMakes", str(raw["MAKE"].nunique()))
 macro("nVehicleClasses", str(raw["VEHICLECLASS"].nunique()))
+macro("nTransCodes", str(raw["TRANSMISSION"].nunique()))
+vc_counts = raw["VEHICLECLASS"].value_counts()
+macro("nSparseClasses", str(int((vc_counts < 15).sum())))
+macro("minClassCount", str(int(vc_counts.min())))
+macro("maxClassCount", str(int(vc_counts.max())))
 macro("coMean", vn(y.mean(), 1))
 macro("coMedian", vn(y.median(), 0))
 macro("coSd", vn(y.std(ddof=1), 1))
@@ -147,7 +152,27 @@ macro("nHybridMissed", str(int((df["HYBRID"] == 1).sum() - (df["HYBRID_NAME"] ==
 macro("nNoGear", str(int(df["NOGEAR"].sum())))
 macro("nGeared", vn(int((df["NOGEAR"] == 0).sum()), 0))
 
-# Table: EDA group summary by Fuel Type, Body Group, Hybrid (compact: mean CO2 & engine size)
+# Table: P5 mapping of 16 VEHICLECLASS levels into 5 BODY groups
+body_order = ["small", "midlarge", "suv", "pickup", "van"]
+body_map_rows = []
+for bkey in body_order:
+    orig_classes = [c for c, g in BODY_GROUPS.items() if g == bkey]
+    orig_sorted = sorted(orig_classes, key=lambda c: -int(vc_counts.get(c, 0)))
+    orig_str = ", ".join(f"\\texttt{{{c}}} ({int(vc_counts[c])})" for c in orig_sorted)
+    sub = df[df["BODY"] == bkey]
+    ref_tag = " (tham chiếu)" if bkey == "small" else ""
+    body_map_rows.append(
+        f"{tex_text(BODY_LABELS[bkey])}{ref_tag} & {orig_str} & {len(sub)} & "
+        f"{vn(sub[TARGET].mean(), 1)} $\\pm$ {vn(sub[TARGET].std(ddof=1), 1)} \\\\"
+    )
+(TABLES / "body-mapping.tex").write_text(
+    "\\begin{tabular}{@{}l >{\\raggedright\\arraybackslash}p{8.4cm} r r@{}}\n\\toprule\n"
+    "Nhóm \\texttt{BODY} & Các hạng \\texttt{VEHICLECLASS} gốc (số xe) & Tổng $n$ & \\COtwo{} TB $\\pm$ ĐLC \\\\\n\\midrule\n"
+    + "\n".join(body_map_rows)
+    + "\n\\bottomrule\n\\end{tabular}\n"
+)
+
+# Table: EDA group summary by Fuel Type, Body Group, Hybrid
 eda_group_rows = []
 for col, gtitle, mapping, order_keys in [
     ("FUELTYPE", "Nhiên liệu", FUEL_LABELS, ["X", "Z", "D", "E"]),
@@ -197,6 +222,7 @@ X3c = sm.add_constant(X3)
 vifs = {n: variance_inflation_factor(X3c, i + 1) for i, n in enumerate(names3)}
 macro("vifEngine", vn(vifs["ENGINESIZE"], 2))
 macro("vifCyl", vn(vifs["CYLINDERS"], 2))
+macro("vifSeFactor", vn(np.sqrt(vifs["ENGINESIZE"]), 1))
 other_vifs = {k: v for k, v in vifs.items() if k not in ("ENGINESIZE", "CYLINDERS", "GEARS", "NOGEAR", "TRANS_TYPE_AV")}
 macro("vifMaxOther", vn(max(other_vifs.values()), 2))
 

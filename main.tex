@@ -3,7 +3,7 @@
 % Mọi số liệu trong bài được nạp tự động từ tables/numbers.tex (do analysis/analyze.py sinh).
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[a4paper,top=2.0cm,bottom=2.0cm,left=2.0cm,right=2.0cm]{geometry}
+\usepackage[a4paper,top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
 \usepackage[T5]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[vietnamese]{babel}
@@ -36,18 +36,19 @@
   pdfauthor={Nhóm thực hiện CSC14005}
 }
 
-% Bố cục gọn (mục tiêu 10-20 trang theo khuyến nghị đề bài)
-\setstretch{1.1}
-\setlength{\parskip}{3pt}
+% Bố cục rõ ràng, thoáng (mục tiêu 20-30 trang)
+\setstretch{1.15}
+\setlength{\parskip}{4pt}
 \setlength{\parindent}{0pt}
-\setlist{itemsep=2pt, topsep=3pt, parsep=0pt}
-\captionsetup{font=footnotesize, labelfont=bf, margin=0.2cm}
+\renewcommand{\arraystretch}{1.15}
+\setlist{itemsep=2.5pt, topsep=4pt, parsep=0pt}
+\captionsetup{font=small, labelfont=bf, margin=0.25cm}
 \setcounter{tocdepth}{2}
 
-% Giảm khoảng trắng quanh bảng/hình và tránh trang trống chỉ chứa 1 hình
-\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
-\setlength{\intextsep}{8pt plus 2pt minus 2pt}
-\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+% Khoảng trắng hài hòa quanh bảng/hình
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
 \renewcommand{\topfraction}{0.90}
 \renewcommand{\bottomfraction}{0.82}
 \renewcommand{\textfraction}{0.08}

@@ -1,9 +1,10 @@
-% Fig 04: hybrid flag before / after the fix (P8).
+% Fig 04: hybrid flag before / after the fix (P8). Legend outside below (a).
 \begin{tikzpicture}
-\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.55cm}, rpt, height=4.5cm]
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.7cm}, rpt, height=5.2cm]
 \nextgroupplot[title={(a) Phần dư M3 làm lộ các xe hybrid bị sót}, width=0.50\textwidth,
   xlabel={\COtwo{} dự đoán bởi M3 (g/km)}, ylabel={Phần dư M3 (g/km)},
-  ymax=190, legend pos=north east]
+  ymin=-110, ymax=135,
+  legend style={at={(0.5,-0.28)}, anchor=north, legend columns=2, column sep=4pt}]
   \addplot[cink, dashed, forget plot] coordinates {(100,0) (450,0)};
   \addplot[dot, csubtle, fill opacity=0.45] table[x=fit, y=res] {\figdata{fig04-regular}};
   \addlegendentry{Xe thường}
