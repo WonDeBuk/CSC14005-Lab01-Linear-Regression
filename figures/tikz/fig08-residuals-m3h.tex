@@ -1,0 +1,58 @@
+% Fig 08: residual diagnostics and 95% prediction-interval calibration of M3h.
+% All legends placed outside below each subplot so zero data points are obscured.
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 2, horizontal sep=2.0cm, vertical sep=3.2cm},
+  rpt, width=0.45\textwidth, height=5.0cm]
+\nextgroupplot[title={(a) Phần dư theo giá trị dự đoán (M3h)},
+  xlabel={Giá trị dự đoán (g/km)}, ylabel={Phần dư (g/km)}, ymin=-85, ymax=132, xmax=525,
+  legend style={at={(0.5,-0.30)}, anchor=north, legend columns=2, column sep=4pt}]
+  \addplot[name path=hi, draw=none, forget plot] table[x=x, y=hi] {\figdata{fig08-band}};
+  \addplot[name path=lo, draw=none, forget plot] table[x=x, y=lo] {\figdata{fig08-band}};
+  \addplot[cblue, fill opacity=0.13] fill between[of=hi and lo];
+  \addlegendentry{$\pm 1{,}96$ ĐLC cục bộ}
+  \addplot[cink, dashed, forget plot] coordinates {(100,0) (450,0)};
+  \addplot[dot, cblue, fill opacity=0.45, forget plot] table[x=fit, y=res] {\figdata{fig08-resid}};
+  \addplot[dot, cterra, fill opacity=0.9, mark size=1.3pt] table[x=fit, y=res] {\figdata{fig08-resid-cook}};
+  \addlegendentry{Cook's $D > 4/n$ (\pvtCookCount{} xe)}
+  \node[lbl, font=\tiny, anchor=east, text=cink] (bm) at (axis cs:520,116) {\pvtTopAName};
+  \draw[->, cmuted] (bm.west) -- (axis cs:\pvTopAX+4,\pvTopAY+2);
+  \node[lbl, font=\tiny, anchor=east, text=cink] (ar) at (axis cs:235,116) {\pvtTopBName};
+  \draw[->, cmuted] (ar.east) -- (axis cs:\pvTopBX-4,\pvTopBY+1);
+\nextgroupplot[title={(b) Biểu đồ Q--Q phần dư chuẩn hoá},
+  xlabel={Phân vị lý thuyết $\mathcal{N}(0, 1)$}, ylabel={Phân vị phần dư chuẩn hoá},
+  xmin=-3.5, xmax=3.6, ymin=-4.0, ymax=6.2,
+  legend style={at={(0.5,-0.30)}, anchor=north, legend columns=2, column sep=4pt}]
+  \addplot[name path=qhi, draw=none, forget plot] table[x=th, y=hi] {\figdata{fig08-qq}};
+  \addplot[name path=qlo, draw=none, forget plot] table[x=th, y=lo] {\figdata{fig08-qq}};
+  \addplot[cterra, fill opacity=0.15] fill between[of=qhi and qlo];
+  \addlegendentry{Dải chuẩn 95\%}
+  \addplot[cterra, dashed, thick] coordinates {(-3.4,-3.4) (3.4,3.4)};
+  \addlegendentry{Đường chuẩn $45^\circ$}
+  \addplot[dot, cnavy, fill opacity=0.7, forget plot] table[x=th, y=obs] {\figdata{fig08-qq}};
+  \node[infobox, anchor=north west] at (rel axis cs:0.03,0.97)
+    {Breusch--Pagan $LM = \bpLM$ ($p$ \bpP)\\ Jarque--Bera $= \jbResid$ ($p$ \jbResidP)};
+\nextgroupplot[title={(c) Thực tế so với dự đoán (tập test)},
+  xlabel={\COtwo{} dự đoán (g/km)}, ylabel={\COtwo{} thực tế (g/km)},
+  xmin=95, xmax=440, ymin=95, ymax=515,
+  legend style={at={(0.5,-0.30)}, anchor=north, legend columns=2, column sep=4pt}]
+  \addplot[cink, dashed] coordinates {(100,100) (440,440)};
+  \addlegendentry{Hoàn hảo ($y = \hat y$)}
+  \addplot[only marks, mark=*, mark size=0.9pt, cteal, fill opacity=0.6, draw opacity=0.6,
+    error bars/.cd, y dir=both, y explicit, error bar style={cteal, opacity=0.45, line width=0.3pt}, error mark=none]
+    table[x=yhat, y=y, y error plus=ep, y error minus=em] {\figdata{fig08-pi-in}};
+  \addlegendentry{Trong KDĐ 95\% (\pvtPiIn/\pvtPiN)}
+  \addplot[only marks, mark=x, mark size=2.2pt, ccrimson, thick] table[x=yhat, y=y] {\figdata{fig08-pi-out}};
+  \addlegendentry{Ngoài KDĐ 95\% (\pvtPiOut{} xe)}
+\nextgroupplot[title={(d) Độ phủ KDĐ 95\% theo tứ phân vị \COtwo}, xgrid,
+  xbar, bar width=0.40cm, bar shift=0pt, xmin=0, xmax=126, ymin=-1.15, ymax=3.6, y dir=reverse,
+  xlabel={Tỉ lệ phủ trên tập test (\%)},
+  ytick={0,1,2,3}, yticklabels={Q1 ($<\pvtQOne$), Q2 (\pvtQOne--\pvtQTwo), Q3 (\pvtQTwo--\pvtQThree), Q4 ($\ge\pvtQThree$)},
+  nodes near coords={\pgfmathprintnumber[fixed, fixed zerofill, precision=1]{\pgfplotspointmeta}\%},
+  every node near coord/.append style={font=\scriptsize\bfseries, text=cink}]
+  \addplot[fill=cteal, fill opacity=0.85, draw=cink] table[x=cover, y=pos] {\figdata{fig08-cover}};
+  \addplot[fill=ccrimson, fill opacity=0.85, draw=cink, bar shift=0pt, nodes near coords={}]
+    table[x=cover, y=pos, skip coords between index={0}{3}] {\figdata{fig08-cover}};
+  \draw[cink, dashed, thick] (axis cs:95,-1.15) -- (axis cs:95,3.6);
+  \node[lbl, font=\scriptsize\bfseries, anchor=north east] at (axis cs:93,-1.02) {Mức danh nghĩa 95\%};
+\end{groupplot}
+\end{tikzpicture}

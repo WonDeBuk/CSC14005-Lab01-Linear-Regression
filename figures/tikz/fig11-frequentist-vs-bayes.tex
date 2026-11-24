@@ -1,0 +1,48 @@
+% Fig 11: OLS / HC3 confidence vs Bayesian credible intervals, and prior sensitivity.
+% Legends cleanly outside below each panel.
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.8cm}, rpt, height=5.8cm]
+\nextgroupplot[title={(a) KTC (OLS, HC3) và KĐTin (M6)}, width=0.43\textwidth, xgrid,
+  xlabel={Ước lượng hệ số (g/km)}, y dir=reverse, ymin=-0.6, ymax=9.6,
+  ytick={0,...,9},
+  yticklabels={Thân: Van \& đặc dụng, Thân: Bán tải, Thân: SUV, Dung tích (/L), Xăng cao cấp,
+               Số xi-lanh, Số cấp hộp số, Hộp số CVT (AV), Nhiên liệu E85, Hybrid},
+  legend style={at={(0.5,-0.22)}, anchor=north, legend columns=2, column sep=4pt},
+  legend image post style={mark=none}]
+  \draw[csubtle, dashed] (axis cs:0,-0.6) -- (axis cs:0,9.6);
+  \addplot[draw=none, mark=none, forget plot] table[x=est, y=pos] {\figdata{fig11-ci}};
+  \addplot[cblue, line width=1.2pt, draw=none, mark=none,
+    error bars/.cd, x dir=both, x explicit, error mark=none, error bar style={cblue, line width=1.2pt}]
+    table[x=est, y expr=\thisrow{pos}-0.2,
+      x error plus expr=\thisrow{ohi}-\thisrow{est}, x error minus expr=\thisrow{est}-\thisrow{olo}]
+    {\figdata{fig11-ci}};
+  \addlegendentry{KTC 95\% OLS}
+  \addplot[cnavy, line width=1.6pt, draw=none, mark=none,
+    error bars/.cd, x dir=both, x explicit, error mark=none, error bar style={cnavy, line width=1.6pt}]
+    table[x=est, y=pos,
+      x error plus expr=\thisrow{hhi}-\thisrow{est}, x error minus expr=\thisrow{est}-\thisrow{hlo}]
+    {\figdata{fig11-ci}};
+  \addlegendentry{KTC 95\% HC3}
+  \addplot[cterra, line width=1.2pt, dashed, draw=none, mark=none,
+    error bars/.cd, x dir=both, x explicit, error mark=none, error bar style={cterra, line width=1.2pt, densely dashed}]
+    table[x=est, y expr=\thisrow{pos}+0.2,
+      x error plus expr=\thisrow{bhi}-\thisrow{est}, x error minus expr=\thisrow{est}-\thisrow{blo}]
+    {\figdata{fig11-ci}};
+  \addlegendentry{KĐTin 95\% Bayes}
+  \addplot[only marks, mark=*, mark size=1.4pt, cink, forget plot] table[x=est, y=pos] {\figdata{fig11-ci}};
+\nextgroupplot[title={(b) Độ nhạy hậu nghiệm theo $\tau$}, width=0.39\textwidth, xmode=log,
+  xlabel={Độ lệch chuẩn prior $\tau$ (đơn vị $\sigma$, thang log)},
+  ylabel={Hệ số dung tích động cơ (g/km/L)},
+  legend style={at={(0.5,-0.22)}, anchor=north, legend columns=1}]
+  \addplot[name path=fh, draw=none, forget plot] table[x=tau, y=hi] {\figdata{fig11-prior-full}};
+  \addplot[name path=fl, draw=none, forget plot] table[x=tau, y=lo] {\figdata{fig11-prior-full}};
+  \addplot[cnavy, fill opacity=0.14, forget plot] fill between[of=fh and fl];
+  \addplot[name path=sh, draw=none, forget plot] table[x=tau, y=hi] {\figdata{fig11-prior-n40}};
+  \addplot[name path=sl, draw=none, forget plot] table[x=tau, y=lo] {\figdata{fig11-prior-n40}};
+  \addplot[cterra, fill opacity=0.14, forget plot] fill between[of=sh and sl];
+  \addplot[cnavy, thick, mark=*, mark size=1.3pt] table[x=tau, y=mean] {\figdata{fig11-prior-full}};
+  \addlegendentry{Toàn bộ tập train ($n = \nTrain$)}
+  \addplot[cterra, thick, mark=*, mark size=1.3pt] table[x=tau, y=mean] {\figdata{fig11-prior-n40}};
+  \addlegendentry{Mẫu con ($n = 40$)}
+\end{groupplot}
+\end{tikzpicture}

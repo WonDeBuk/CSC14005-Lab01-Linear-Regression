@@ -18,8 +18,11 @@ data/processed/*
 !data/**/.gitkeep
 models/*
 !models/.gitkeep
+*.joblib
+analysis/out/
 
-# LaTeX build files
+# LaTeX build files and compiled PDF
+main.pdf
 *.aux
 *.log
 *.out

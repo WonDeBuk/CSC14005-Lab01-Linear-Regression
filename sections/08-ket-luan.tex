@@ -1,0 +1,30 @@
+\section{Kết luận}
+\label{sec:conclusion}
+
+% TODO(review): chương này là bản nháp tổng hợp; thành viên đọc lại và hoàn thiện bằng lời văn của nhóm trước khi nộp.
+
+\subsection{Tóm tắt kết quả chính}
+Trên bộ dữ liệu xe hạng nhẹ Canada 2014 (\nCars{} xe), đồ án rút ra bốn kết quả cốt lõi:
+\begin{enumerate}
+  \item \textbf{Chất lượng dữ liệu quyết định độ chính xác:} kiểm tra EDA loại bỏ 4 cột \texttt{FUELCONSUMPTION\_\allowbreak *} gây rò rỉ mục tiêu ($R^2 = \leakRtwo$), còn chẩn đoán phần dư M3 phát hiện \nHybridMissed{} xe hybrid bị sót, đưa $\hat\beta_{\mathrm{hybrid}}$ từ \bHybridOld{} xuống \bHybrid{} g/km và giảm BIC đi \bicDropFlag{} điểm.
+  \item \textbf{Hiệu năng chuỗi 9 mô hình tuyến tính:} M3h đạt RMSE test \rmseThreeH{} g/km ($R^2 = \rtwoThreeH$, giảm \rmseGainThreeH\% so với M1), còn M8b đạt \rmseEightB{} g/km ($R^2 = \rtwoEightB$, chỉ kém mốc phi tuyến GP \gpGapEightB{} g/km). Phân rã Bias\textsuperscript{2}--Variance xác nhận \bvBiasShareEightB\%--\bvBiasShareThreeH\% sai số nằm ở độ chệch và nhiễu nền, giải thích vì sao Ridge không cải thiện thêm.
+  \item \textbf{Suy diễn định lượng và nghịch lý Simpson:} trong M3h (HC3 và bootstrap), dung tích động cơ (+\bEngine{} g/km/L) và thân xe van (+\bVan{} g/km) gắn với mức \COtwo{} cao hơn, còn hybrid gắn với mức thấp hơn \bHybridAbs{} g/km. Riêng E85 cho thấy nghịch lý Simpson rõ rệt: trung bình thô cao nhất (\meanE{} g/km) nhưng khi kiểm soát biến khác lại thấp hơn \bEEightyFiveAbs{} g/km --- khớp kiểm định ghép cặp \nPairs{} xe flex-fuel (\pairDiff{} g/km) và xác suất hậu nghiệm Bayes ($P \approx \probEneg$).
+  \item \textbf{Frequentist--Bayesian và ứng dụng:} tại $n = \nTrain{}$, M6 (NIG, prior yếu) cho KĐTin 95\% tiệm cận KTC OLS, trong khi vai trò co rút của prior biểu hiện rõ ở mẫu nhỏ ($n = 40$). M3h và M8b được triển khai trực tiếp trên trình duyệt qua CO\textsubscript{2} Studio.
+\end{enumerate}
+
+\subsection{Hạn chế và hướng phát triển}
+Quá trình thực nghiệm ghi nhận năm hạn chế chính:
+\begin{itemize}
+  \item \textbf{Phạm vi thời gian:} dữ liệu chỉ gồm xe năm 2014, chưa phản ánh xe điện/plug-in hybrid và công nghệ động cơ mới.
+  \item \textbf{Cấu trúc phụ thuộc:} \nPairs{} cặp xe flex-fuel xuất hiện hai lần vi phạm một phần giả thiết độc lập (G4) và có thể tách qua hai phía train/test.
+  \item \textbf{Độ phủ KDĐ ở vùng cao:} phương sai thay đổi khiến độ phủ KDĐ 95\% ở Q4 tụt xuống \piCoverQFour\% dù HC3/bootstrap đã hiệu chỉnh suy diễn $\hat\beta$.
+  \item \textbf{Kiểm định sau chọn biến:} tương tác của M8b được chọn trên tập train nên $p$ lạc quan; kiểm định Nadeau--Bengio trên CV cho $p = \nbInterP$.
+  \item \textbf{Bản chất tương quan:} hệ số phản ánh liên hệ thống kê từ bảng xếp hạng chuẩn hóa, không phải kết luận nhân quả thực nghiệm.
+\end{itemize}
+
+Do đường cong học tập đã bão hòa từ khoảng 300 mẫu, ba hướng mở rộng hợp lý tập trung vào đặc trưng và phương pháp:
+\begin{enumerate}
+  \item \textbf{Mở rộng dữ liệu nhiều năm và thêm đặc trưng vật lý} (khối lượng không tải, hệ số cản, dẫn động AWD/FWD, tăng áp) để giảm độ chệch.
+  \item \textbf{Tách tập theo nhóm mẫu xe (\texttt{GroupKFold})} cho xe flex-fuel kết hợp kiểm chứng chéo lồng nhau (nested CV) khi chọn tương tác.
+  \item \textbf{Khoảng dự đoán thích ứng} (quantile regression hoặc locally weighted conformal prediction) để đưa độ phủ Q4 về sát mức 95\%.
+\end{enumerate}

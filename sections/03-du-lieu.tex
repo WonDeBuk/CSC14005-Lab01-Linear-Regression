@@ -1,0 +1,112 @@
+\section{Dữ liệu, phân tích khám phá và tiền xử lý}
+\label{sec:data}
+
+\subsection{Nguồn dữ liệu và tổng quan các thuộc tính}
+Bộ dữ liệu là bảng xếp hạng tiêu thụ nhiên liệu và phát thải \COtwo{} xe hạng nhẹ năm 2014 của Bộ Tài nguyên Thiên nhiên Canada~\cite{nrcan2014fuel} (tệp \texttt{FuelConsumptionCo2.csv}~\cite{ibm2014fuelco2}), gồm \nCars{} quan sát thuộc \nMakes{} hãng và \nCols{} thuộc tính, không có giá trị khuyết (\texttt{NaN}). Trên toàn tập dữ liệu, biến mục tiêu \texttt{CO2EMISSIONS} dao động từ \coMin{} đến \coMax{} g/km (trung bình \coMean{}, trung vị \coMedian{}, ĐLC \coSd{} g/km); dung tích động cơ (\texttt{ENGINESIZE}) có trung bình \engMean{} $\pm$ \engSd{} L (từ \engMin{} đến \engMax{} L); số xi-lanh từ \cylMin{} đến \cylMax{} (trung vị \cylMedian{}); và trong \nGeared{} xe hộp số phân cấp cố định (ngoài \nNoGear{} xe vô cấp \texttt{AV}), số cấp trải từ \gearsMin{} đến \gearsMax{} (trung vị \gearsMedian{}). Bảng~\ref{tab:vars-fe} tổng hợp toàn bộ thuộc tính gốc cùng vai trò xử lý trong mô hình.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Thuộc tính gốc trong \texttt{FuelConsumptionCo2.csv}, xử lý tạo đặc trưng và lý do thống kê (các bước P1--P8).}
+  \label{tab:vars-fe}
+  \small
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{5.2cm} >{\raggedright\arraybackslash}p{6.2cm}@{}}
+    \toprule
+    Cột gốc & Cách xử lý / đặc trưng dẫn xuất & Lý do kỹ thuật và thống kê \\
+    \midrule
+    \texttt{MODELYEAR} & Loại bỏ (P1) & Cột hằng (2014, phương sai 0 $\Rightarrow X^\top X$ suy biến) \\
+    \texttt{FUELCONSUMPTION\_*} & Loại bỏ cả 4 cột tiêu thụ nhiên liệu (P1--P2) & Cột MPG là đổi đơn vị; \COtwo{} quy đổi trực tiếp từ đây (rò rỉ mục tiêu) \\
+    \texttt{ENGINESIZE}, \texttt{CYLINDERS} & Giữ dạng số; thêm bình phương và tương tác ở M4, M8b (P7) & Hai biến động cơ chủ lực; giữ cả hai dù VIF sát 10 để kiểm định riêng và đối chiếu Ridge \\
+    \texttt{FUELTYPE} & Mã hóa 3 biến giả (\texttt{Z}, \texttt{D}, \texttt{E}; tham chiếu \texttt{X}) & Tránh bẫy biến giả; so sánh trực tiếp với xăng thường \\
+    \texttt{VEHICLECLASS} & Gom \nVehicleClasses{} hạng thành \texttt{BODY} (5 nhóm; 4 biến giả, tham chiếu xe nhỏ) (P5) & Tránh phình sai số chuẩn ở \nSparseClasses{} hạng ít mẫu ($n < 15$) và tránh bẫy biến giả \\
+    \texttt{TRANSMISSION} & Tách \nTransCodes{} mã thành \texttt{TRANS\_TYPE} (tham chiếu \texttt{A}), \texttt{GEARS}, \texttt{NOGEAR} (P6) & Xử lý khuyết có cấu trúc cho \nNoGear{} xe vô cấp \texttt{AV} (\texttt{GEARS}=0, \texttt{NOGEAR}=1) \\
+    \texttt{MAKE}, \texttt{MODEL} & Không đưa trực tiếp; trích cờ \texttt{HYBRID} theo tên, \texttt{PRIUS}, \texttt{CR-Z}, Lexus \texttt{...h} (P8) & Sửa \nHybridMissed{} xe hybrid bị sót phát hiện qua phần dư M3 \\
+    \texttt{CO2EMISSIONS} & Biến mục tiêu $y$ (giữ thang gốc g/km) (P4) & Bảo toàn diễn giải vật lý; kiểm chứng thang log riêng ở M4log \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Phân tích khám phá dữ liệu (EDA) và kiểm tra rò rỉ (P1--P4)}
+
+\subsubsection{Cột hằng, rò rỉ dữ liệu và phân phối mục tiêu}
+\label{sec:leakage}
+\textbf{P1--P2 (Loại cột hằng và rò rỉ mục tiêu).} Cột \texttt{MODELYEAR} nhận duy nhất giá trị 2014 (phương sai bằng 0), nếu giữ lại sẽ trùng tuyến tính với hệ số chặn làm $X^\top X$ suy biến; cột \texttt{FUELCONSUMPTION\_\allowbreak COMB\_MPG} chỉ là phép đổi đơn vị nghịch đảo của \texttt{FUELCONSUMPTION\_COMB}. Quan trọng hơn, kiểm tra tỉ số \texttt{CO2EMISSIONS} / \texttt{FUELCONSUMPTION\_COMB} cho thấy tỉ số gần như là hằng số tuyệt đối theo từng nhiên liệu: \ratioX{} (xăng thường \texttt{X}), \ratioZ{} (cao cấp \texttt{Z}), \ratioD{} (diesel \texttt{D}) và \ratioE{} (ethanol E85 \texttt{E}), với hệ số biến thiên không quá \ratioCvMax\%. Như Hình~\ref{fig:leak-eda}(a) minh họa, các điểm nằm thẳng hàng trên ba đường tuyến tính tách biệt; đưa \texttt{FUELCONSUMPTION\_COMB} và tương tác nhiên liệu vào OLS đạt $R^2 = \leakRtwo$ và RMSE $= \leakRmse$ g/km trên tập test. Vì \COtwo{} trong bộ dữ liệu thực chất được quy đổi từ mức tiêu thụ nhiên liệu đo sau thử nghiệm, cả bốn cột \texttt{FUELCONSUMPTION\_*} bắt buộc phải loại bỏ để tránh rò rỉ dữ liệu.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig02-leakage-eda}
+  \caption{(a) Quan hệ gần như tất định giữa \COtwo{} và tiêu thụ nhiên liệu kết hợp theo loại nhiên liệu (rò rỉ mục tiêu). (b) \COtwo{} theo dung tích động cơ phân màu theo 5 nhóm thân xe, kèm đường hồi quy đơn M1.}
+  \label{fig:leak-eda}
+\end{figure}
+
+\textbf{P3--P4 (Xe flex-fuel và phân phối biến mục tiêu).} Bộ dữ liệu chứa \nPairs{} mẫu xe flex-fuel (cùng hãng, mẫu, động cơ và hộp số) được chứng nhận hai lần trên cả xăng thường (\texttt{X}) và ethanol E85 (\texttt{E}); nhóm giữ cả hai dòng vì nhiên liệu là biến đầu vào thiết kế, ghi nhận hạn chế vi phạm một phần giả thiết độc lập (G4) và tận dụng chính \nPairs{} cặp này cho kiểm định $t$ ghép cặp độc lập ở Mục~\ref{sec:simpson}. Về phân phối biến mục tiêu, \texttt{CO2EMISSIONS} trên thang gốc lệch phải nhẹ (độ lệch \coSkew{}, Jarque--Bera $JB = \jbRaw$, $p \jbRawP$), còn trên thang $\ln(\text{CO}_2)$ đối xứng hơn (độ lệch \logSkew{}, $JB = \jbLog$, $p = \jbLogP$); tuy nhiên vì giả thiết chuẩn áp dụng cho phần dư chứ không cho phân phối biên của $y$, nhóm giữ thang gốc và kiểm chứng biến đổi log riêng ở M4log.
+
+\subsubsection{Phân nhóm, tương quan và đa cộng tuyến (P7)}
+Bảng~\ref{tab:eda-groups} và Hình~\ref{fig:corr-body} cho thấy lượng phát thải tăng dần rõ rệt từ xe nhỏ đến van \& đặc dụng. Đáng chú ý, trên trung bình thô, xe chạy ethanol E85 có \COtwo{} cao nhất (\meanE{} so với \meanX{} g/km ở xăng thường), nhưng dung tích trung bình của nhóm E85 cũng tới \engE{} L so với \engX{} L ở xăng thường --- bằng chứng sớm của biến gây nhiễu sẽ được kiểm định ở Mục~\ref{sec:simpson}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Phát thải \COtwo{} trung bình và dung tích động cơ trung bình theo nhiên liệu, thân xe và hệ truyền động.}
+  \label{tab:eda-groups}
+  \small
+  \input{tables/eda-groups.tex}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig03-corr-body}
+  \caption{(a) Ma trận tương quan Pearson giữa các biến số thiết kế và \COtwo{}. (b) Phân phối \COtwo{} theo 5 nhóm thân xe sau khi gom từ \nVehicleClasses{} hạng xe gốc.}
+  \label{fig:corr-body}
+\end{figure}
+
+Về đa cộng tuyến (P7, Hình~\ref{fig:corr-body}(a)), \texttt{ENGINESIZE} ($r = \corrEngCo$) và \texttt{CYLINDERS} ($r = \corrCylCo$) tương quan rất cao với nhau ($r = \corrEngCyl$). Trong M3 trên tập train, hệ số phóng đại phương sai của dung tích là $\mathrm{VIF} = \vifEngine$ và của số xi-lanh là $\vifCyl$ (đều sát nhưng dưới ngưỡng 10, làm sai số chuẩn phóng đại khoảng $\sqrt{\mathrm{VIF}} \approx \vifSeFactor$ lần), trong khi các biến thiết kế độc lập khác đều dưới \vifMaxOther. Nhóm giữ cả hai biến để phục vụ kiểm định riêng, diễn giải thận trọng khi giữ biến kia cố định, và đối chứng với hồi quy Ridge (M5) cùng prior co rút Bayesian (M6).
+
+\subsection{Tiền xử lý và tạo đặc trưng theo quy trình What / Why / How (P5, P6, P8, P9)}
+% TODO(review): kiểm tra lại các bước tiền xử lý P5 (gom nhóm VEHICLECLASS), P6 (tách hộp số), P8 (sửa cờ hybrid) và P9 (Pipeline).
+
+\subsubsection{P5: Gom \nVehicleClasses{} hạng \texttt{VEHICLECLASS} thành 5 nhóm thân xe và mã hóa one-hot}
+\begin{itemize}
+  \item \textbf{What (Dữ liệu đang có gì):} Cột \texttt{VEHICLECLASS} gốc có \nVehicleClasses{} mức phân bố rất không đều, từ \maxClassCount{} xe (\texttt{MID-SIZE}) và 172 xe (\texttt{COMPACT}) xuống chỉ còn \nSparseClasses{} hạng thưa dưới 15 mẫu là \texttt{MINIVAN} (14), \texttt{PICKUP TRUCK - SMALL} (12), \texttt{SPECIAL PURPOSE VEHICLE} (7) và \texttt{STATION WAGON - MID-SIZE} (\minClassCount{} xe).
+  \item \textbf{Why (Tại sao cần xử lý):} Trong hồi quy tuyến tính, mỗi mức phân loại đòi hỏi một biến giả và một hệ số riêng. Các hạng chỉ có 6--14 quan sát khiến phương sai ước lượng phình lớn, dễ khớp thái quá và không ổn định khi chia fold CV; đồng thời nếu đưa đủ cả $k$ biến giả cùng hệ số chặn sẽ rơi vào ``bẫy biến giả'' (đa cộng tuyến hoàn hảo).
+  \item \textbf{How (Cách xử lý):} Nhóm gom \nVehicleClasses{} hạng xe thành 5 nhóm cấu trúc thân xe (\texttt{BODY}) theo kiến thức hồi quy biến định tính~\cite[Mục~8.6.1]{len2023phantichdulieu}, rồi mã hóa $k - 1 = 4$ biến giả với nhóm tham chiếu là \textbf{Xe nhỏ} (tức toàn bộ 4 biến giả đều bằng 0; hệ số của từng nhóm còn lại đọc là mức chênh lệch \COtwo{} kỳ vọng so với Xe nhỏ khi các yếu tố khác cố định). Bảng~\ref{tab:body-map} liệt kê chính xác ánh xạ từng hạng gốc và Hình~\ref{fig:body-group} đối chiếu phân bố trước/sau khi gom.
+\end{itemize}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Ánh xạ chi tiết \nVehicleClasses{} hạng \texttt{VEHICLECLASS} gốc sang 5 nhóm thân xe \texttt{BODY} (bước P5).}
+  \label{tab:body-map}
+  \footnotesize
+  \input{tables/body-mapping.tex}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig03b-vehicleclass-grouping}
+  \caption{Đối chiếu trước và sau bước P5: (a) số lượng xe trên \nVehicleClasses{} hạng \texttt{VEHICLECLASS} gốc (tô cam \nSparseClasses{} hạng thưa $n < 15$); (b) số lượng xe và \COtwo{} trung bình (g/km, trong ngoặc) trên 5 nhóm \texttt{BODY} sau khi gom.}
+  \label{fig:body-group}
+\end{figure}
+
+\subsubsection{P6: Tách \nTransCodes{} mã \texttt{TRANSMISSION} và xử lý khuyết có cấu trúc}
+\begin{itemize}
+  \item \textbf{What:} Cột \texttt{TRANSMISSION} gồm \nTransCodes{} mã ghép như \texttt{A6}, \texttt{AS8}, \texttt{M5}, \texttt{AV}, mang đồng thời hai thông tin là kiểu hộp số và số cấp; riêng \nNoGear{} xe mang mã \texttt{AV} không có chữ số cấp.
+  \item \textbf{Why:} Mã hóa trực tiếp \nTransCodes{} mã tạo quá nhiều biến giả dư thừa, trong khi ô thiếu số cấp ở mã \texttt{AV} không phải lỗi nhập liệu mà là \emph{khuyết có cấu trúc} (hộp số vô cấp CVT vốn không có số cấp rời rạc; điền bằng trung bình sẽ tạo ra giá trị không tồn tại).
+  \item \textbf{How:} Tách chuỗi thành kiểu hộp số \texttt{TRANS\_TYPE} (5 mức \texttt{A}, \texttt{AS}, \texttt{AM}, \texttt{AV}, \texttt{M}; tham chiếu \texttt{A}), biến số cấp \texttt{GEARS} và cờ nhị phân \texttt{NOGEAR} (đặt \texttt{GEARS} $= 0$, \texttt{NOGEAR} $= 1$ cho \nNoGear{} xe \texttt{AV}). Hình~\ref{fig:trans-split} minh họa phân bố trước và sau khi tách.
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig03c-transmission-split}
+  \caption{Đối chiếu trước và sau bước P6: (a) 12 mã \texttt{TRANSMISSION} phổ biến nhất (tô cam \nNoGear{} xe vô cấp \texttt{AV} không có số cấp); (b) 5 kiểu hộp số \texttt{TRANS\_TYPE} sau khi tách kèm số xe và \COtwo{} trung bình (trong ngoặc).}
+  \label{fig:trans-split}
+\end{figure}
+
+\subsubsection{P8--P9: Hiệu chỉnh cờ hybrid từ phần dư và đóng gói \texttt{Pipeline}}
+\textbf{P8 (Sửa nhãn hybrid trước/sau).} Ban đầu, lọc tên mẫu chứa chuỗi \texttt{HYBRID} chỉ thu được \nHybridOld{} xe. Tuy nhiên, biểu đồ phần dư của mô hình M3 (Hình~\ref{fig:hybrid-fix}(a)) làm lộ một cụm \nHybridMissed{} xe hybrid không mang chữ \texttt{HYBRID} trong tên (các mẫu Lexus hậu tố \texttt{h}, Toyota Prius, Honda CR-Z) nằm tách biệt ở vùng phần dư âm lớn. Sau khi bổ sung quy tắc nhận diện (tổng \nHybrid{} xe hybrid), hệ số ước lượng đổi từ \bHybridOld{} xuống \bHybrid{} g/km với KTC 95\% HC3 gọn hơn và BIC tập train giảm \bicDropFlag{} điểm (từ \bicThreeHOld{} xuống \bicThreeH{}, Hình~\ref{fig:hybrid-fix}(b)).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig04-hybrid-before-after}
+  \caption{Đối chiếu trước và sau bước P8: (a) phần dư M3 làm lộ \nHybridMissed{} xe hybrid không chứa chữ ``HYBRID'' trong tên; (b) tác động lên $\hat\beta_{\mathrm{hybrid}}$ (KTC 95\% HC3) và BIC.}
+  \label{fig:hybrid-fix}
+\end{figure}
+
+\textbf{P9 (Chia tập, chuẩn hóa và chống rò rỉ).} Dữ liệu được hoán vị ngẫu nhiên với \texttt{seed = 42} và chia 80/20 thành \nTrain{} xe huấn luyện và \nTest{} xe kiểm tra (mở duy nhất một lần). Toàn bộ bước \texttt{OneHotEncoder} và \texttt{StandardScaler} (dùng cho Ridge M5 và Bayesian M6 để phép phạt/prior áp dụng đồng đều giữa các thang đo) được đóng gói trong \texttt{Pipeline} của \texttt{scikit-learn}~\cite{pedregosa2011sklearn} và chỉ khớp trên tập huấn luyện ở từng fold CV và lần khớp cuối.

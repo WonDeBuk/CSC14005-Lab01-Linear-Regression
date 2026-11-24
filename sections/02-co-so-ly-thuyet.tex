@@ -1,0 +1,84 @@
+\section{Cơ sở lý thuyết}
+\label{sec:theory}
+
+Chương này tóm lược nền tảng toán học của hồi quy tuyến tính và các công cụ suy diễn thống kê sử dụng trong đồ án, tham khảo từ tài liệu học phần~\cite{len2023phantichdulieu}, giáo trình học máy thống kê~\cite{james2021islr, hastie2009esl} và tiếp cận xác suất của Bishop~\cite{bishop2006prml}.
+
+\subsection{Mô hình hồi quy tuyến tính và ước lượng OLS}
+Cho tập huấn luyện $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^{n}$ với ma trận thiết kế $X \in \mathbb{R}^{n \times p}$ (cột đầu bằng $1$ cho hệ số chặn) và vectơ mục tiêu $y \in \mathbb{R}^{n}$. Mô hình hồi quy tuyến tính bội có dạng
+\begin{equation}
+  y = X\beta + \varepsilon, \qquad
+  \hat\beta = \arg\min_{\beta}\lVert y - X\beta \rVert_2^2 = (X^\top X)^{-1} X^\top y,
+  \label{eq:ols}
+\end{equation}
+trong đó $\hat\beta$ là nghiệm bình phương tối thiểu thông thường (Ordinary Least Squares -- OLS) duy nhất khi $X$ đủ hạng (cài đặt số học qua phân rã QR/SVD), và phương sai sai số ước lượng không chệch là $\hat\sigma^2 = \frac{1}{n-p}\lVert y - X\hat\beta \rVert_2^2$~\cite{len2023phantichdulieu, james2021islr}. Theo \textbf{Định lý Gauss--Markov}, dưới bốn giả thiết tuyến tính theo tham số (G1: $\mathbb{E}[y \mid X] = X\beta$), kỳ vọng sai số bằng không (G2: $\mathbb{E}[\varepsilon \mid X] = 0$), phương sai đồng nhất (G3: $\mathrm{Var}(\varepsilon_i \mid X) = \sigma^2$) và sai số không tương quan (G4: $\mathrm{Cov}(\varepsilon_i, \varepsilon_j \mid X) = 0$ với $i \neq j$), nghiệm OLS là ước lượng tuyến tính không chệch tốt nhất (BLUE) với ma trận hiệp phương sai nhỏ nhất theo thứ tự nửa xác định dương.
+
+\subsection{Suy diễn thống kê, chẩn đoán và xử lý phương sai thay đổi}
+Khi bổ sung giả thiết chuẩn $\varepsilon \mid X \sim \mathcal{N}(0, \sigma^2 I_n)$, kiểm định từng hệ số $H_0\!: \beta_j = 0$ dùng thống kê $t$ và kiểm định đồng thời $q$ tham số giữa mô hình rút gọn ($\mathrm{RSS}_0$, $p_0$ tham số) với mô hình mở rộng ($\mathrm{RSS}_1$, $p_1 = p_0 + q$) dùng thống kê $F$ từng phần~\cite[Chương~8]{len2023phantichdulieu}:
+\begin{equation}
+  t_j = \frac{\hat\beta_j}{\sqrt{\hat\sigma^2 [(X^\top X)^{-1}]_{jj}}} \sim t(n-p), \qquad
+  F = \frac{(\mathrm{RSS}_0 - \mathrm{RSS}_1)/q}{\mathrm{RSS}_1/(n - p_1)} \sim F(q,\, n - p_1).
+  \label{eq:t-f}
+\end{equation}
+Tại điểm mới $x_0$ có đòn bẩy (leverage) $h_0 = x_0^\top (X^\top X)^{-1} x_0$, khoảng tin cậy (Confidence Interval -- CI) cho kỳ vọng $\mathbb{E}[y \mid x_0]$ và khoảng dự đoán (Prediction Interval -- PI) cho một quan sát cá thể $y_0$ ở mức $100(1-\alpha)\%$ lần lượt là
+\begin{equation}
+  \mathrm{CI}(x_0) = x_0^\top \hat\beta \pm t_{1-\alpha/2,\,n-p}\,\hat\sigma\sqrt{h_0}, \qquad
+  \mathrm{PI}(x_0) = x_0^\top \hat\beta \pm t_{1-\alpha/2,\,n-p}\,\hat\sigma\sqrt{1 + h_0}.
+  \label{eq:ci-pi}
+\end{equation}
+
+Để kiểm chứng các giả thiết mô hình, báo cáo sử dụng bốn công cụ chẩn đoán~\cite{len2023phantichdulieu, james2021islr}: hệ số phóng đại phương sai $\mathrm{VIF}_j = (1 - R_j^2)^{-1}$ phát hiện đa cộng tuyến (ngưỡng thực hành $\mathrm{VIF} > 10$); kiểm định Breusch--Pagan~\cite{breusch1979test} cho phương sai sai số thay đổi (heteroscedasticity); kiểm định Jarque--Bera~\cite{jarque1980efficient} cho tính chuẩn của phần dư; và khoảng cách Cook ($D_i > 4/n$) nhận diện quan sát có ảnh hưởng lớn.
+
+Khi giả thiết (G3) bị vi phạm, ước lượng $\hat\beta$ vẫn không chệch nhưng sai số chuẩn OLS bị chệch. Đồ án áp dụng \textbf{sai số chuẩn HC3} của MacKinnon--White~\cite{mackinnon1985hc}:
+\begin{equation}
+  \widehat{\mathrm{Cov}}_{\mathrm{HC3}}(\hat\beta) = (X^\top X)^{-1} X^\top \,\mathrm{diag}\!\left(\frac{\hat\varepsilon_i^2}{(1 - h_{ii})^2}\right) X (X^\top X)^{-1},
+  \label{eq:hc3}
+\end{equation}
+kết hợp \textbf{pairs bootstrap} ($B = 2.000$ mẫu lặp lại có hoàn lại) để dựng khoảng tin cậy phân vị 95\% không phụ thuộc giả thiết chuẩn hay đồng nhất phương sai. Ngoài ra, đồ án thử nghiệm \textbf{bình phương tối thiểu có trọng số (WLS)} bằng cách ước lượng hàm phương sai phụ $\ln \hat\varepsilon_i^2 = x_i^\top \gamma$ rồi đặt trọng số $w_i = \exp(-x_i^\top \hat\gamma)$ để giải $\hat\beta_{\mathrm{WLS}} = (X^\top W X)^{-1} X^\top W y$.
+
+Biến phân loại có $k$ mức được mã hóa thành $k-1$ biến giả (bỏ một mức tham chiếu để tránh đa cộng tuyến hoàn hảo); số hạng đa thức và tương tác ($x_1 x_2$) cho phép độ dốc thay đổi theo phân khúc mà vẫn giữ tính tuyến tính theo tham số. Khi hồi quy trên thang logarit $\ln y_i = x_i^\top \beta + u_i$, dự đoán trên thang gốc được hiệu chỉnh bằng hệ số smearing phi tham số của Duan~\cite{duan1983smearing}: $\hat y_0 = \exp(x_0^\top \hat\beta) \cdot \frac{1}{n}\sum_{i=1}^n \exp(\hat u_i)$ nhằm tránh độ chệch dưới do bất đẳng thức Jensen.
+
+\subsection{Chính quy hóa Ridge và hồi quy tuyến tính Bayesian}
+Hồi quy Ridge ($\ell_2$) bổ sung số hạng phạt lên chuẩn bình phương các hệ số (trừ hệ số chặn, trên biến đã chuẩn hóa) nhằm kiểm soát phương sai ước lượng khi các biến tương quan cao~\cite{hastie2009esl}:
+\begin{equation}
+  \hat\beta_{\mathrm{Ridge}} = \arg\min_\beta \left\{ \lVert y - X\beta \rVert_2^2 + \lambda \lVert \beta_{-0} \rVert_2^2 \right\} = (X^\top X + \lambda I')^{-1} X^\top y.
+  \label{eq:ridge}
+\end{equation}
+Dưới góc nhìn xác suất, nghiệm~\eqref{eq:ridge} trùng với ước lượng cực đại hậu nghiệm (MAP) khi đặt tiên nghiệm Gaussian đẳng hướng $\beta_{-0} \sim \mathcal{N}(0, \tau^2 I)$ với $\lambda = \sigma^2 / \tau^2$~\cite[Mục~3.3]{bishop2006prml}.
+
+Để suy diễn Bayes đầy đủ trên cả $(\beta, \sigma^2)$, đồ án dùng mô hình liên hợp Normal--Inverse--Gamma (NIG)~\cite{bishop2006prml}: $\sigma^2 \sim \mathrm{IG}(a_0, b_0)$ và $\beta \mid \sigma^2 \sim \mathcal{N}(m_0, \sigma^2 V_0)$. Với $m_0 = 0$, phân phối hậu nghiệm giữ dạng liên hợp $\mathrm{NIG}(m_n, V_n, a_n, b_n)$:
+\begin{equation}
+  V_n = (V_0^{-1} + X^\top X)^{-1}, \quad
+  m_n = V_n X^\top y, \quad
+  a_n = a_0 + \frac{n}{2}, \quad
+  b_n = b_0 + \frac{1}{2}\!\left(y^\top y - m_n^\top V_n^{-1} m_n\right).
+  \label{eq:nig-post}
+\end{equation}
+Lấy tích phân khử $\sigma^2$, hậu nghiệm biên của $\beta_j$ là phân phối Student-$t$ với $2a_n$ bậc tự do, tâm $m_{n,j}$, độ co giãn $\sqrt{\frac{b_n}{a_n}V_{n,jj}}$ (tạo khoảng đáng tin -- Credible Interval, CrI), còn phân phối dự đoán hậu nghiệm tại $x_0$ có tâm $x_0^\top m_n$ và độ co giãn $\sqrt{\frac{b_n}{a_n}(1 + x_0^\top V_n x_0)}$. Bảng~\ref{tab:freq-bayes} đối chiếu hai trường phái suy diễn.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Đối chiếu hai trường phái Frequentist và Bayesian trong hồi quy tuyến tính.}
+  \label{tab:freq-bayes}
+  \small
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{6.0cm} >{\raggedright\arraybackslash}p{6.0cm}@{}}
+    \toprule
+    Khía cạnh & Trường phái Frequentist & Trường phái Bayesian (NIG) \\
+    \midrule
+    Quan niệm về $\beta$ & Hằng số cố định chưa biết; tính ngẫu nhiên ở mẫu & Biến ngẫu nhiên qua tiên nghiệm và hậu nghiệm \\
+    Ước lượng điểm & Cực tiểu RSS: $\hat\beta = (X^\top X)^{-1}X^\top y$ & Trung bình hậu nghiệm $m_n$; MAP Gauss $\equiv$ Ridge \\
+    Khoảng 95\% & CI: 95\% mẫu lặp lại chứa $\beta$ thật & CrI: $P(\beta_j \in \text{CrI} \mid \mathcal{D}) = 0{,}95$ \\
+    Kiểm định & Thống kê $t$, $F$ từng phần và giá trị $p$ dưới $H_0$ & Xác suất hậu nghiệm, vd. $P(\beta_{\text{E85}} < 0 \mid \mathcal{D})$ \\
+    Khi $n$ lớn & Cần HC3/bootstrap khi vi phạm đồng nhất phương sai & Dữ liệu lấn át prior yếu; CrI tiệm cận CI của OLS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Chỉ số đánh giá, kiểm định CV và phân rã Bias--Variance}
+Hiệu năng dự đoán được đo bằng MSE, $\mathrm{RMSE} = \sqrt{\mathrm{MSE}}$ (nhạy sai số lớn, cùng đơn vị g/km), MAE và MedAE (phản ánh sai số điển hình, ít nhạy đuôi nặng), cùng $R^2$, $R^2_{\mathrm{adj}}$ và tiêu chuẩn thông tin Bayes $\mathrm{BIC} = n\ln(\mathrm{RSS}/n) + p\ln n$ để cân bằng độ khớp và độ phức tạp $p$.
+
+Do tập huấn luyện giữa các fold trong kiểm chứng chéo $k$-fold ($k = 10$) chồng lấn tới 80\%, kiểm định $t$ ghép cặp thông thường ước lượng thấp phương sai và dễ bác bỏ sai $H_0$. Báo cáo dùng \textbf{kiểm định $t$ hiệu chỉnh Nadeau--Bengio}~\cite{nadeau2003inference} trên hiệu sai số $d_j = \mathrm{RMSE}_{A,j} - \mathrm{RMSE}_{B,j}$:
+\begin{equation}
+  t_{\mathrm{NB}} = \frac{\bar d}{\sqrt{\left(\frac{1}{k} + \frac{n_{\mathrm{val}}}{n_{\mathrm{fit}}}\right) s_d^2}} \sim t(k-1),
+  \label{eq:nadeau-bengio}
+\end{equation}
+kèm kiểm định phi tham số Wilcoxon signed-rank để đối chiếu. Cuối cùng, sai số bình phương kỳ vọng ngoài mẫu được phân rã thành tổng $\mathrm{Bias}^2 + \mathrm{Variance} + \sigma_\varepsilon^2$ qua $B = 200$ tập mẫu bootstrap để phân biệt khớp thiếu với khớp thái quá~\cite{hastie2009esl, bishop2006prml}.

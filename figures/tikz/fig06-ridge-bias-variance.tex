@@ -1,0 +1,35 @@
+% Fig 06: Ridge lambda path (M5) and bootstrap bias^2-variance decomposition.
+% Both legends placed cleanly outside below the x-axis.
+\pgfplotstableread{\figdata{fig06-bv}}\bvtable
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.8cm},
+  rpt, width=0.47\textwidth, height=5.2cm]
+\nextgroupplot[title={(a) Chọn siêu tham số $\lambda$ cho Ridge (M5)}, xmode=log,
+  xlabel={Hệ số phạt $\lambda$ (thang log)}, ylabel={RMSE CV 10-fold (g/km)},
+  log basis x=10,
+  legend style={at={(0.5,-0.31)}, anchor=north, legend columns=2, column sep=6pt}]
+  \addplot[name path=hi, draw=none, forget plot] table[x=lambda, y=hi] {\figdata{fig06-ridge}};
+  \addplot[name path=lo, draw=none, forget plot] table[x=lambda, y=lo] {\figdata{fig06-ridge}};
+  \addplot[cblue, fill opacity=0.15, forget plot] fill between[of=hi and lo];
+  \addplot[cnavy, thick] table[x=lambda, y=cv] {\figdata{fig06-ridge}};
+  \addlegendentry{RMSE CV 10-fold}
+  \addplot[cterra, dashed, thick] coordinates {(3,18) (3,60)};
+  \addlegendentry{M5 ($\lambda = 3$)}
+\nextgroupplot[title={(b) Phân rã Bias$^2$--Variance (200 bootstrap)}, ygrid,
+  ybar stacked, bar width=0.46cm, ymin=0, ymax=1320,
+  xlabel={Mô hình (nhãn trên cột: tỉ lệ Variance)}, ylabel={MSE kỳ vọng (g/km)$^2$},
+  xtick=data, xticklabels from table={\figdata{fig06-bv}}{model},
+  scaled y ticks=false,
+  legend style={at={(0.5,-0.31)}, anchor=north, legend columns=2, column sep=6pt},
+  legend image code/.code={\fill[#1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);}]
+  \addplot[fill=cnavy, fill opacity=0.85, draw=none] table[x=pos, y=bias] {\figdata{fig06-bv}};
+  \addlegendentry{$\mathrm{Bias}^2 + \sigma_\varepsilon^2$}
+  \addplot[fill=cterra, draw=none] table[x=pos, y=var] {\figdata{fig06-bv}};
+  \addlegendentry{Variance}
+  \pgfplotsinvokeforeach{0,...,6}{
+    \pgfplotstablegetelem{#1}{total}\of\bvtable\let\bvtotal\pgfplotsretval
+    \pgfplotstablegetelem{#1}{label}\of\bvtable
+    \edef\bvnode{\noexpand\node[lbl, font=\noexpand\tiny\noexpand\bfseries, text=cterra, anchor=south]
+      at (axis cs:#1,\bvtotal) {\pgfplotsretval};}\bvnode}
+\end{groupplot}
+\end{tikzpicture}

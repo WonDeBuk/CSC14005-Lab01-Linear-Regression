@@ -1,0 +1,74 @@
+\section{Đánh giá mô hình, chẩn đoán và phân tích độ bền vững}
+\label{sec:eval}
+
+\subsection{So sánh hiệu năng và kiểm định giữa các mô hình}
+Bảng~\ref{tab:models} và Hình~\ref{fig:models} tổng hợp hiệu năng của 9 mô hình tuyến tính trên tập huấn luyện, 10-fold CV và tập kiểm tra độc lập (\nTest{} xe). Bảng~\ref{tab:model-tests} đối chiếu song song kiểm định $F$ từng phần trên tập train với kiểm định $t$ hiệu chỉnh Nadeau--Bengio và Wilcoxon trên 10 fold CV.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Hiệu năng 9 mô hình hồi quy tuyến tính trên tập train (\nTrain{} xe), 10-fold CV và tập test (\nTest{} xe). Đơn vị RMSE, MAE, MedAE: g/km.}
+  \label{tab:models}
+  \footnotesize
+  \setlength{\tabcolsep}{3.6pt}
+  \input{tables/models.tex}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig05-model-comparison}
+  \caption{Đối chiếu RMSE CV 10-fold (trung bình $\pm$ 1 ĐLC) và RMSE tập kiểm tra giữa 9 mô hình tuyến tính cùng mốc phi tuyến Gaussian Process.}
+  \label{fig:models}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Kiểm định so sánh mô hình: $F$ từng phần trên tập huấn luyện và kiểm định $t$ hiệu chỉnh Nadeau--Bengio (df $= 9$), Wilcoxon trên 10 fold CV ($\overline{\Delta\text{RMSE}} < 0$: mô hình sau có RMSE nhỏ hơn).}
+  \label{tab:model-tests}
+  \small
+  \setlength{\tabcolsep}{4.5pt}
+  \input{tables/model-tests.tex}
+\end{table}
+
+% TODO(review): thành viên kiểm tra lại nhận xét phân tầng hiệu năng và giải thích sự khác nhau giữa F, Wilcoxon và Nadeau-Bengio cho M8b vs M3h.
+Từ Bảng~\ref{tab:models}--\ref{tab:model-tests} và Hình~\ref{fig:models}, các mô hình phân thành bốn tầng rõ rệt:
+\begin{itemize}
+  \item \textbf{Tầng cơ sở (M1, M2):} chỉ dùng dung tích và số xi-lanh cho RMSE test \rmseOne{} và \rmseTwo{} g/km ($R^2 = \rtwoOne$ và \rtwoTwo). Dù $F$ từng phần M1$\to$M2 có ý nghĩa ($p \PMOneMTwo$), đa cộng tuyến khiến cải thiện CV không đạt ngưỡng Nadeau--Bengio.
+  \item \textbf{Tầng đầy đủ biến thiết kế (M3, M4, M4log, M5):} bổ sung nhiên liệu, thân xe và hộp số (M2$\to$M3) tạo bước nhảy lớn nhất, có ý nghĩa trên cả ba kiểm định ($p_{\text{NB}} \nbThreeTwoP$), giảm RMSE test xuống \rmseThree{} g/km ($R^2 = \rtwoThree$). Các biến thể M4 ($p_F = \PMThreeMFour$), M5 ($p_{\text{NB}} = \nbFiveFourP$) và M4log ($p_{\text{NB}} = \nbFourLogFourP$) đều không tạo cải thiện có ý nghĩa thống kê so với nền M3/M4.
+  \item \textbf{Tầng bổ sung cờ hybrid (M3h, M6):} thêm một biến \texttt{HYBRID} đã hiệu chỉnh giảm thêm \rmseDropHybrid{} g/km trên tập test (xuống \rmseThreeH{} g/km, $R^2 = \rtwoThreeH$, MedAE $= \medaeThreeH{}$ g/km) và có ý nghĩa ở cả kiểm định $F$ lẫn Nadeau--Bengio ($p = \nbHybridP$). M6 dưới prior yếu trùng khớp M3h.
+  \item \textbf{Tầng có tương tác phân khúc (M8b):} đạt RMSE test thấp nhất (\rmseEightB{} g/km, $R^2 = \rtwoEightB$, giảm \rmseGain\% RMSE so với M1, sát mốc GP \gpRmse{} g/km) và BIC thấp nhất (\bicEightB{}). Tuy nhiên, trái với $F$ trên tập train ($p \PMThreehMEightb$) và Wilcoxon sát ngưỡng ($p = \nbInterWilcoxP$), kiểm định Nadeau--Bengio sau khi hiệu chỉnh chồng lấn giữa các fold cho $p = \nbInterP$ ($\overline{\Delta\text{RMSE}} = \nbInterDiff{}$ g/km) --- nhấn mạnh lý do cần kết luận thận trọng về ưu thế ngoài mẫu của M8b so với M3h.
+\end{itemize}
+
+\subsection{Đường cong học tập, phân rã \texorpdfstring{Bias\textsuperscript{2}}{Bias2}--Variance và chi phí tính toán}
+% TODO(review): kiểm tra lại nhận xét về Bias-Variance và ý nghĩa của việc bổ sung đặc trưng thay vì tăng cỡ mẫu.
+Hình~\ref{fig:learning} và Hình~\ref{fig:ridge-bv} đối chiếu đường cong học tập theo kích thước tập huấn luyện, đường chọn siêu tham số $\lambda$ của Ridge (M5) và phân rã Bias\textsuperscript{2}--Variance (200 tập mẫu bootstrap trên tập kiểm tra cố định). Trên Hình~\ref{fig:learning}, đường RMSE CV của M1, M3h và M8b đều nhanh chóng đi ngang từ khoảng 300 mẫu huấn luyện, còn khoảng cách giữa RMSE test và train khá hẹp (\gapTestTrainEightB{} g/km ở M8b và \gapTestTrainThreeH{} g/km ở M3h), chứng tỏ không có hiện tượng khớp thái quá. Phân rã ở Hình~\ref{fig:ridge-bv}(b) định lượng rõ điều này: Variance chỉ chiếm \bvVarShareThreeH\% tổng MSE kỳ vọng ở M3h và \bvVarShareEightB\% ở M8b, còn \bvBiasShareEightB\%--\bvBiasShareThreeH\% nằm ở thành phần $\mathrm{Bias}^2 + \sigma_\varepsilon^2$ (giảm từ \bvBiasOne{} ở M1 xuống \bvBiasThreeH{} ở M3h và \bvBiasEightB{} ở M8b).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig07-learning-curve}
+  \caption{Đường cong học tập của M1, M3h và M8b theo số lượng xe huấn luyện (trung bình trên 10 fold CV).}
+  \label{fig:learning}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig06-ridge-bias-variance}
+  \caption{(a) Đường chọn siêu tham số $\lambda$ cho Ridge (M5) qua 10-fold CV. (b) Phân rã MSE kỳ vọng trên tập test thành $\mathrm{Bias}^2 + \sigma_\varepsilon^2$ và Variance (200 bootstrap).}
+  \label{fig:ridge-bv}
+\end{figure}
+
+Điều này lý giải trực tiếp vì sao Ridge (M5, cực tiểu CV \ridgeBestCv{} g/km tại $\lambda^* = \ridgeBestLam$, Hình~\ref{fig:ridge-bv}(a)) không cải thiện so với M4: với tỉ lệ $n/p \approx \ratioNPFour$ và phương sai ước lượng vốn rất nhỏ, việc co rút hệ số không bù đắp nổi độ chệch tăng thêm. Về chi phí tính toán, các mô hình tuyến tính có nghiệm dạng đóng $\mathcal{O}(np^2 + p^3)$ khi huấn luyện (thực tế chỉ \fitMsMin{}--\fitMsMax{} ms) và $\mathcal{O}(p)$ khi dự đoán.
+
+\subsection{Chẩn đoán phần dư và hiệu chuẩn khoảng dự đoán}
+Hình~\ref{fig:resid} chẩn đoán phần dư và khoảng dự đoán 95\% của M3h. Trên Hình~\ref{fig:resid}(a), độ phân tán phần dư mở rộng dạng hình phễu theo giá trị dự đoán (Breusch--Pagan $LM = \bpLM$, $p \bpP$), và biểu đồ Q--Q (Hình~\ref{fig:resid}(b)) lệch chuẩn ở hai đuôi (Jarque--Bera $JB = \jbResid$, $p \jbResidP$). Khi thử nghiệm WLS theo hàm phương sai phụ $\ln \hat\varepsilon_i^2 = x_i^\top \gamma$, MedAE giảm nhẹ (\wlsMedae{} so với \medaeThreeH{} g/km) nhưng RMSE test xấu đi thành \wlsRmse{} g/km ($R^2 = \wlsRtwo$). Do đó nhóm giữ nghiệm điểm OLS và dùng sai số chuẩn \textbf{HC3} kết hợp \textbf{pairs bootstrap ($B = 2.000$)} cho suy diễn: SE của dung tích tăng từ \seEngineOls{} lên \seEngineHc{} g/km/L, và KTC 95\% bootstrap khớp sát HC3 (dung tích [\bootEngLo; \bootEngHi], hybrid [\bootHybridLo; \bootHybridHi], E85 [\bootEEightyFiveLo; \bootEEightyFiveHi] g/km).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig08-residuals-m3h}
+  \caption{Chẩn đoán M3h: (a) phần dư theo giá trị dự đoán kèm dải $\pm 1{,}96$ ĐLC cục bộ và điểm $D_i > 4/n$; (b) biểu đồ Q--Q; (c) thực tế so với dự đoán kèm KDĐ 95\% trên tập test; (d) tỉ lệ phủ KDĐ 95\% theo tứ phân vị \COtwo{}.}
+  \label{fig:resid}
+\end{figure}
+
+Về điểm ảnh hưởng, có \nCook{} xe trên tập train vượt ngưỡng Cook $D_i > 4/n$, song rà soát trực tiếp cho thấy chúng đều là xe thương mại có thật với cấu hình đặc thù như Bentley Mulsanne (\cookBentleyEng{} L, \cookBentleyCo{} g/km, phần dư \cookBentleyRes{}), Audi R8 (\cookAudiEng{} L, \cookAudiCo{} g/km, \cookAudiRes{}) hay Mitsubishi Lancer Evolution (\cookLancerEng{} L, \cookLancerCo{} g/km, \cookLancerRes{}), nên được giữ nguyên thay vì xóa bỏ. Trên tập kiểm tra, khoảng dự đoán 95\% cổ điển bao phủ \piCover\% (\piInCount/\nTest{} xe, Hình~\ref{fig:resid}(c)), nhưng phân tách theo tứ phân vị (Hình~\ref{fig:resid}(d)) cho thấy độ phủ ở Q1--Q3 đạt \piCoverQOne\%, \piCoverQTwo\%, \piCoverQThree\% còn Q4 ($\ge \piQThreeTest$ g/km) tụt xuống \piCoverQFour\% do công thức~\eqref{eq:ci-pi} giả định $\hat\sigma$ hằng số.
+
+\subsection{Độ bền vững và khả năng tái lập}
+Kiểm tra độ nhạy trên ba tỉ lệ phân chia train/test (60/40, 70/30, 80/20, seed 42) cho thấy thứ hạng mô hình hoàn toàn bất biến: M8b luôn dẫn đầu ($R^2 \in [\splitRtwoEightBMin; \splitRtwoEightBMax]$), kế tiếp là M3h ($R^2 \in [\splitRtwoThreeHMin; \splitRtwoThreeHMax]$), tách biệt rõ với M3, M5 và M1. Khi tiêm nhiễu Gaussian vào các biến số liên tục (\texttt{ENGINESIZE}, \texttt{CYLINDERS}, \texttt{GEARS}) trên tập test (trung bình 20 lần lấy mẫu), RMSE tăng mượt mà theo mức nhiễu: tại $\sigma = 0{,}50$ ĐLC, RMSE của M8b, M3h và M5 lần lượt lên \noiseEightBHalf{}, \noiseThreeHHalf{} và \noiseFiveHalf{} g/km. Toàn bộ kết quả, bảng biểu và \nMacros{} macro số liệu trong báo cáo được tái lập tất định với \texttt{RANDOM\_STATE = 42} từ \texttt{analysis/analyze.py} và kiểm chứng bởi \texttt{tests/test\_pipeline.py}.

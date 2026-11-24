@@ -103,16 +103,19 @@ Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/
 ## Cấu trúc thư mục
 
 ```
+├── analysis/              # analyze.py (bảng + macro số liệu), plot_data.py (dữ liệu pgfplots)
 ├── web/                   # CO₂ Studio: React + TypeScript + three.js
 ├── infra/                 # Terraform: S3 + CloudFront
 ├── data/raw/              # FuelConsumptionCo2.csv (1.067 xe, 2014)
 ├── docs/                  # đề bài, quyết định của nhóm
-├── figures/               # hình cho báo cáo
+├── figures/               # biểu đồ pgfplots (tikz/, data/) và ảnh báo cáo
+├── sections/              # 8 chương báo cáo LaTeX
+├── tables/                # bảng LaTeX và numbers.tex sinh tự động
 ├── models/                # mô hình đã huấn luyện (không commit)
 ├── notebooks/             # EDA và thí nghiệm
 ├── src/linreg/            # config, features, data, models, bayes, inference, evaluate, train
 ├── tests/                 # kiểm tra pipeline
-├── main.tex               # báo cáo (pdfLaTeX: latexmk main.tex)
+├── main.tex               # báo cáo (pdfLaTeX: latexmk main.tex, ≤ 20 trang)
 └── references.bib
 ```
 

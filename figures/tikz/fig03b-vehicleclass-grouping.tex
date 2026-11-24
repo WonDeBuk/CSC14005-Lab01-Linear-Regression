@@ -1,0 +1,31 @@
+% Fig 03b: P5 before/after grouping of 16 VEHICLECLASS levels into 5 BODY groups.
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=2.45cm}, rpt, height=6.6cm]
+\nextgroupplot[title={(a) Trước: 16 hạng \texttt{VEHICLECLASS} (số xe)},
+  width=0.41\textwidth, xgrid, xbar, bar width=0.22cm, bar shift=0pt,
+  xlabel={Số xe ($n$)}, xmin=0, xmax=215, ymin=-0.7, ymax=15.7, y dir=reverse,
+  ytick={0,...,15},
+  yticklabels={MID-SIZE, COMPACT, SUV -- SMALL, SUV -- STANDARD, FULL-SIZE, TWO-SEATER,
+    SUBCOMPACT, PICKUP -- STD, MINICOMPACT, WAGON -- SMALL, VAN -- PASSENGER,
+    VAN -- CARGO, MINIVAN, PICKUP -- SMALL, SPECIAL PURPOSE, WAGON -- MID},
+  yticklabel style={font=\tiny},
+  nodes near coords, every node near coord/.append style={font=\tiny, text=cink, anchor=west},
+  legend style={at={(0.5,-0.21)}, anchor=north, legend columns=2, column sep=4pt}]
+  \addplot[fill=cnavy!75, draw=cnavy] table[x=n, y=pos] {\figdata{fig03b-vc-norm}};
+  \addlegendentry{$n \ge 15$ xe}
+  \addplot[fill=cterra, draw=cterra!80!black] table[x=n, y=pos] {\figdata{fig03b-vc-sparse}};
+  \addlegendentry{Hạng thưa ($n < 15$)}
+\nextgroupplot[title={(b) Sau: 5 nhóm \texttt{BODY} (số xe \& \COtwo{} TB)},
+  width=0.39\textwidth, xgrid, xbar, bar width=0.58cm, bar shift=0pt,
+  xlabel={Số xe ($n$)}, xmin=0, xmax=535, ymin=-0.6, ymax=4.6, y dir=reverse,
+  ytick={0,1,2,3,4},
+  yticklabels={{Xe nhỏ\\(tham chiếu)}, {Sedan/wagon\\trung--lớn}, SUV, Bán tải, {Van \&\\đặc dụng}},
+  yticklabel style={align=right, font=\scriptsize}]
+  \addplot[fill=cteal!85, draw=cink] table[x=n, y=pos] {\figdata{fig03b-body5}};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvBodyNSmall+6,0) {\pvBodyNSmall{} (\pvtBodyCoSmall)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvBodyNMidlarge+6,1) {\pvBodyNMidlarge{} (\pvtBodyCoMidlarge)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvBodyNSuv+6,2) {\pvBodyNSuv{} (\pvtBodyCoSuv)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvBodyNPickup+6,3) {\pvBodyNPickup{} (\pvtBodyCoPickup)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvBodyNVan+6,4) {\pvBodyNVan{} (\pvtBodyCoVan)};
+\end{groupplot}
+\end{tikzpicture}

@@ -1,0 +1,36 @@
+% Fig 10: Simpson's paradox for E85 from three angles.
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=3 by 1, horizontal sep=1.45cm}, rpt, width=0.33\textwidth, height=5.2cm,
+  title style={align=center}]
+\nextgroupplot[title={(a) Trung bình thô\\(trong ngoặc: dung tích TB)}, ygrid,
+  ybar, bar width=0.5cm, ymin=0, ymax=380, xmin=-0.6, xmax=3.6,
+  ylabel={\COtwo{} trung bình (g/km)},
+  xtick={0,1,2,3}, xticklabels={Diesel, {Xăng\\thường}, {Xăng\\cao cấp}, E85},
+  xticklabel style={align=center, font=\tiny}]
+  \addplot[fill=cfuel-D, draw=cink, bar shift=0pt] table[x=pos, y=co2, skip coords between index={1}{4}] {\figdata{fig10-fuel}};
+  \addplot[fill=cfuel-X, draw=cink, bar shift=0pt] table[x=pos, y=co2, skip coords between index={0}{1}, skip coords between index={2}{4}] {\figdata{fig10-fuel}};
+  \addplot[fill=cfuel-Z, draw=cink, bar shift=0pt] table[x=pos, y=co2, skip coords between index={0}{2}, skip coords between index={3}{4}] {\figdata{fig10-fuel}};
+  \addplot[fill=cfuel-E, draw=cink, bar shift=0pt] table[x=pos, y=co2, skip coords between index={0}{3}] {\figdata{fig10-fuel}};
+  \node[lbl, align=center, anchor=south, font=\tiny\bfseries] at (axis cs:0,\pvCoD+4) {\pvtCoD\\(\pvtEngD{} L)};
+  \node[lbl, align=center, anchor=south, font=\tiny\bfseries] at (axis cs:1,\pvCoX+4) {\pvtCoX\\(\pvtEngX{} L)};
+  \node[lbl, align=center, anchor=south, font=\tiny\bfseries] at (axis cs:2,\pvCoZ+4) {\pvtCoZ\\(\pvtEngZ{} L)};
+  \node[lbl, align=center, anchor=south, font=\tiny\bfseries] at (axis cs:3,\pvCoE+4) {\pvtCoE\\(\pvtEngE{} L)};
+\nextgroupplot[title={(b) Hiệu ứng trong M3h\\(so với xăng thường, HC3)}, xgrid,
+  xmin=-30, xmax=26, ymin=-0.7, ymax=2.6, y dir=reverse,
+  xlabel={Chênh lệch \COtwo{} (g/km)},
+  ytick={0,1,2}, yticklabels={Diesel, {Xăng\\cao cấp}, E85}, yticklabel style={align=center}]
+  \draw[cink, dashed] (axis cs:0,-0.7) -- (axis cs:0,2.6);
+  \draw[cfuel-D, very thick, |-|] (axis cs:\pvFuelDLo,0) -- (axis cs:\pvFuelDHi,0);
+  \draw[cfuel-Z, very thick, |-|] (axis cs:\pvFuelZLo,1) -- (axis cs:\pvFuelZHi,1);
+  \draw[cfuel-E, very thick, |-|] (axis cs:\pvFuelELo,2) -- (axis cs:\pvFuelEHi,2);
+  \fill[cfuel-D] (axis cs:\pvFuelD,0) circle (2.2pt) node[lbl, above=2pt, font=\scriptsize\bfseries, text=cfuel-D] {\pvtFuelD};
+  \fill[cfuel-Z] (axis cs:\pvFuelZ,1) circle (2.2pt) node[lbl, above=2pt, font=\scriptsize\bfseries, text=cfuel-Z] {\pvtFuelZ};
+  \fill[cfuel-E] (axis cs:\pvFuelE,2) circle (2.2pt) node[lbl, above=2pt, font=\scriptsize\bfseries, text=cfuel-E] {\pvtFuelE};
+\nextgroupplot[title={(c) Ghép cặp \pvtPairN{} xe flex-fuel\\(\COtwo{} E85 $-$ \COtwo{} xăng)}, ygrid,
+  xlabel={Chênh lệch (g/km)}, ylabel={Số cặp xe}, ymin=0, ymax=21.5, legend pos=north west]
+  \addplot[ybar interval, fill=cterra!70, draw=white, forget plot] table[x=x, y=n] {\figdata{fig10-pairs}};
+  \addplot[cink, dashed, forget plot] coordinates {(0,0) (0,21.5)};
+  \addplot[cnavy, thick] coordinates {(\pvPairMean,0) (\pvPairMean,21.5)};
+  \addlegendentry{TB = \pvtPairMean}
+\end{groupplot}
+\end{tikzpicture}

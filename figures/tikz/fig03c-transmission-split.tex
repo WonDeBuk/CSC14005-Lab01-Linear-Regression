@@ -1,0 +1,29 @@
+% Fig 03c: P6 before/after splitting 22 TRANSMISSION codes into 5 TRANS_TYPE + GEARS + NOGEAR.
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=2.6cm}, rpt, height=5.8cm]
+\nextgroupplot[title={(a) Trước: 12 mã \texttt{TRANSMISSION} phổ biến nhất},
+  width=0.43\textwidth, xgrid, xbar, bar width=0.26cm, bar shift=0pt,
+  xlabel={Số xe ($n$)}, xmin=0, xmax=265, ymin=-0.7, ymax=11.7, y dir=reverse,
+  ytick={0,...,11},
+  yticklabels={A6, AS6, M6, A8, AS8, AS7, M5, AV, A4, AM7, A5, A7},
+  yticklabel style={font=\scriptsize},
+  nodes near coords, every node near coord/.append style={font=\tiny, text=cink, anchor=west},
+  legend style={at={(0.5,-0.25)}, anchor=north, legend columns=2, column sep=4pt}]
+  \addplot[fill=cnavy!75, draw=cnavy] table[x=n, y=pos] {\figdata{fig03c-trans-norm}};
+  \addlegendentry{Có số cấp (4--9)}
+  \addplot[fill=cterra, draw=cterra!80!black] table[x=n, y=pos] {\figdata{fig03c-trans-av}};
+  \addlegendentry{\texttt{AV} vô cấp (\texttt{NOGEAR}=1)}
+\nextgroupplot[title={(b) Sau: 5 kiểu hộp số (số xe \& \COtwo{} TB)},
+  width=0.41\textwidth, xgrid, xbar, bar width=0.54cm, bar shift=0pt,
+  xlabel={Số xe ($n$)}, xmin=0, xmax=590, ymin=-0.6, ymax=4.6, y dir=reverse,
+  ytick={0,1,2,3,4},
+  yticklabels={{AS (tự động\\chọn số)}, {A (tự động,\\tham chiếu)}, M (số sàn), {AV (vô cấp\\CVT)}, {AM (bán\\tự động)}},
+  yticklabel style={align=right, font=\scriptsize}]
+  \addplot[fill=cblue!80, draw=cink] table[x=n, y=pos] {\figdata{fig03c-trans5}};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvTransNAS+6,0) {\pvTransNAS{} (\pvtTransCoAS)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvTransNA+6,1) {\pvTransNA{} (\pvtTransCoA)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvTransNM+6,2) {\pvTransNM{} (\pvtTransCoM)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvTransNAV+6,3) {\pvTransNAV{} (\pvtTransCoAV)};
+  \node[lbl, anchor=west, font=\scriptsize, text=cink] at (axis cs:\pvTransNAM+6,4) {\pvTransNAM{} (\pvtTransCoAM)};
+\end{groupplot}
+\end{tikzpicture}

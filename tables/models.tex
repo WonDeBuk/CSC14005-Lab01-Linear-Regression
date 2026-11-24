@@ -1,0 +1,16 @@
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{4.1cm} r r r c r r r r@{}}
+\toprule
+Mã & Mô hình & $p$ & $R^2_{\mathrm{adj}}$ & BIC & RMSE CV & RMSE & MAE & MedAE & $R^2$ \\
+ & & & (train) & (train) & 10-fold & test & test & test & test \\
+\midrule
+M1 & Hồi quy đơn theo dung tích (mốc) & 2 & 0,765 & 8.257 & 30,16 $\pm$ 2,75 & 33,01 & 24,39 & 18,12 & 0,758 \\
+M2 & M1 + số xi-lanh & 3 & 0,774 & 8.231 & 29,63 $\pm$ 2,69 & 32,46 & 24,61 & 18,40 & 0,766 \\
+M3 & M2 + nhiên liệu, thân xe, hộp số & 16 & 0,857 & 7.917 & 23,80 $\pm$ 2,08 & 25,29 & 18,80 & 14,30 & 0,858 \\
+M3h & M3 + cờ hybrid (đã sửa nhãn) & 17 & 0,871 & 7.831 & 22,56 $\pm$ 2,29 & 24,08 & 18,35 & 14,19 & 0,871 \\
+M4 & M3 + dung tích$^2$, dung tích $\times$ (D, E85) & 19 & 0,857 & 7.933 & 23,80 $\pm$ 2,12 & 25,43 & 18,85 & 14,50 & 0,856 \\
+M4log & M4 trên $\log(\text{CO}_2)$ + Duan smearing & 19 & -- & -- & 23,76 $\pm$ 2,15 & 25,37 & 18,64 & 14,34 & 0,857 \\
+M5 & Ridge trên biến M4 ($\lambda = 3$) & 19 & -- & -- & 23,80 $\pm$ 2,10 & 25,38 & 18,84 & 14,35 & 0,857 \\
+M6 & Bayesian NIG trên M3h (prior yếu) & 17 & -- & -- & 22,56 $\pm$ 2,29 & 24,08 & 18,35 & 14,19 & 0,871 \\
+M8b & M3h + dung tích $\times$ (bán tải, van, hybrid) & 20 & 0,882 & 7.775 & 21,61 $\pm$ 2,29 & 22,61 & 17,37 & 13,48 & 0,886 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,36 @@
+\section{Giới thiệu tổng quan}
+\label{sec:intro}
+
+\subsection{Bài toán, động lực và mục tiêu}
+% TODO(review): thành viên kiểm tra lại đoạn bài toán, động lực và điều chỉnh cách diễn đạt cho phù hợp với nhóm.
+Trong quá trình thiết kế và đánh giá một mẫu xe hạng nhẹ mới, các thông số kỹ thuật cơ bản như dung tích động cơ, số xi-lanh, loại nhiên liệu, cấu trúc thân xe, kiểu hộp số và hệ truyền động hybrid đều được xác định trước khi xe bước vào giai đoạn thử nghiệm thực tế. Đồ án đặt bài toán ước tính lượng phát thải \COtwo{} (g/km) chỉ từ các thông số thiết kế này, nhằm hỗ trợ so sánh nhanh giữa các cấu hình kỹ thuật và định lượng mức chênh lệch phát thải gắn với từng lựa chọn thiết kế.
+
+Bài toán phù hợp với hồi quy tuyến tính (Linear Regression) ở hai điểm: biến mục tiêu \texttt{CO2EMISSIONS} là đại lượng liên tục có đơn vị vật lý rõ ràng (g/km) nên từng hệ số diễn giải trực tiếp thành mức thay đổi kỳ vọng khi giữ các biến khác cố định; đồng thời cho phép đặt và kiểm định giả thuyết thống kê có hệ thống dưới cả hai trường phái tần suất (Frequentist) và Bayes (Bayesian) theo định hướng học phần CSC14005~\cite{len2023phantichdulieu, bishop2006prml}. Nhóm sử dụng bộ dữ liệu xếp hạng tiêu thụ nhiên liệu và phát thải xe hạng nhẹ năm 2014 của Bộ Tài nguyên Thiên nhiên Canada~\cite{nrcan2014fuel} (tệp \texttt{FuelConsumptionCo2.csv}~\cite{ibm2014fuelco2}, gồm \nCars{} mẫu xe của \nMakes{} hãng) với bốn mục tiêu cụ thể:
+\begin{enumerate}
+  \item \textbf{Định nghĩa bài toán sạch rò rỉ dữ liệu (data leakage):} dự đoán \texttt{CO2EMISSIONS} chỉ từ các biến thiết kế (\texttt{ENGINESIZE}, \texttt{CYLINDERS}, \texttt{FUELTYPE}, nhóm thân xe từ \texttt{VEHICLECLASS}, thông tin hộp số từ \texttt{TRANSMISSION} và cờ \texttt{HYBRID}), loại bỏ hoàn toàn các cột \texttt{FUELCONSUMPTION\_*} do có quan hệ quy đổi trực tiếp với biến mục tiêu (Mục~\ref{sec:leakage}).
+  \item \textbf{Xây dựng 9 mô hình tuyến tính theo tham số:} tiến dần từ hồi quy đơn (M1) đến hồi quy bội có biến giả, tương tác, biến đổi log--smearing, chính quy hóa Ridge ($\ell_2$) và hồi quy Bayes liên hợp Normal--Inverse--Gamma (NIG), bảo đảm số mô hình lớn hơn số thành viên trong nhóm.
+  \item \textbf{Kiểm định và diễn giải chặt chẽ dựa trên dữ liệu:} đánh giá bằng RMSE, MAE, MedAE, $R^2$, $R^2_{\mathrm{adj}}$, BIC và kiểm chứng chéo (cross-validation -- CV) 10-fold; dùng sai số chuẩn vững HC3 và bootstrap khi phương sai sai số thay đổi; dùng kiểm định $t$ hiệu chỉnh Nadeau--Bengio khi so sánh giữa các fold CV; toàn bộ suy diễn chỉ rút ra từ kết quả mô hình.
+  \item \textbf{Triển khai ứng dụng trực quan:} phát triển ứng dụng web CO\textsubscript{2} Studio cho phép điều chỉnh thông số thiết kế, dự đoán phát thải kèm khoảng tin cậy, khoảng dự đoán 95\% và phân rã đóng góp từng yếu tố.
+\end{enumerate}
+
+\subsection{Phân công công việc}
+Nhóm gồm 5 thành viên phối hợp thực hiện toàn bộ quy trình và rà soát chéo giữa mã nguồn Python (kiểm thử tự động qua \texttt{pytest}), bảng số liệu sinh tự động và phần diễn giải trong báo cáo (Bảng~\ref{tab:assign}).
+
+% TODO(team): xác nhận lại phân công thực tế giữa 5 thành viên trước khi nộp báo cáo cuối.
+\begin{table}[htbp]
+  \centering
+  \caption{Phân công nhiệm vụ dự kiến giữa các thành viên trong nhóm.}
+  \label{tab:assign}
+  \small
+  \begin{tabular}{@{}l l l >{\raggedright\arraybackslash}p{5.8cm}@{}}
+    \toprule
+    MSSV & Họ và tên & Mô hình phụ trách & Nội dung chính trong báo cáo \\
+    \midrule
+    24127020 & Nguyễn Thành Đạt & M1, M2 & Giới thiệu, EDA, rò rỉ dữ liệu, ứng dụng web \\
+    24127039 & Phan Quang Hiệp & M3, M3h & Tiền xử lý, chẩn đoán phần dư, sửa nhãn hybrid \\
+    24127183 & Trần Duy Khang & M4, M4log & Cơ sở lý thuyết OLS/log--smearing, kiểm định $F$ \\
+    24127500 & Nguyễn Đại Phúc & M5 (Ridge) & Chính quy hóa, Bias--Variance, độ bền vững \\
+    24127508 & Lê Nho Duy Phước & M6 (Bayes), M8b & Suy diễn Bayes, độ nhạy prior, tương tác, kết luận \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -1,0 +1,23 @@
+\section{Ứng dụng web \texorpdfstring{CO\textsubscript{2}}{CO2} Studio}
+\label{sec:app}
+
+Để đáp ứng yêu cầu trực quan hóa và tương tác với mô hình, nhóm xây dựng ứng dụng web \textbf{CO\textsubscript{2} Studio}, triển khai công khai tại \url{https://d1dts9wd5j3er9.cloudfront.net} (Hình~\ref{fig:app}).
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.78\textwidth]{app-desktop.png}
+  \caption{Giao diện chính của ứng dụng CO\textsubscript{2} Studio: bảng điều chỉnh thông số thiết kế bên trái và mô phỏng 3D kèm kết quả dự đoán bên phải.}
+  \label{fig:app}
+\end{figure}
+
+\subsection{Tính năng chính}
+\begin{itemize}
+  \item \textbf{Tùy chỉnh 7 thông số thiết kế:} chọn thân xe (5 nhóm), dung tích, số xi-lanh, nhiên liệu (4 loại), kiểu và số cấp hộp số, cờ hybrid; hỗ trợ 5 cấu hình xe mẫu và chuyển đổi trực tiếp giữa M3h với M8b.
+  \item \textbf{Dự đoán kèm suy diễn thống kê:} hiển thị giá trị điểm \COtwo{} (g/km), KTC 95\%, KDĐ 95\%, phân vị trong đội xe \nCars{} mẫu năm 2014 và chỉ số $R^2$, RMSE của mô hình đang chọn.
+  \item \textbf{Phân rã đóng góp và cảnh báo ngoại suy:} tách dự đoán thành hệ số chặn cộng đóng góp tuyến tính từng yếu tố (khớp Bảng~\ref{tab:coef}) và cảnh báo khi đòn bẩy $h_0 > 3p/n$.
+  \item \textbf{Trực quan hóa 3D tương tác:} mô hình xe điểm ảnh (\texttt{three.js}~\cite{threejs}, Kenney Car Kit~\cite{kenney2024carkit}) cập nhật thân xe, cụm động cơ, pin hybrid (chế độ nhìn xuyên), khói xả và cho phép so sánh đồng thời 5 nhóm thân xe.
+\end{itemize}
+
+\subsection{Tích hợp toán học và triển khai}
+Lệnh \texttt{python -m linreg.export\_web} huấn luyện lại M3h và M8b theo đúng \texttt{Pipeline} đã kiểm thử rồi xuất $\hat\beta$, $(X^\top X)^{-1}$, $\hat\sigma^2$, $t_{0{,}975;\,n-p}$ và phân phối đội xe 2014 sang tệp tĩnh \texttt{web/public/model.json}. Giao diện (React 19, TypeScript, Vite) dựng vectơ $x_0$ và tính trực tiếp~\eqref{eq:ci-pi} cùng đòn bẩy $h_0$ ngay trên trình duyệt không cần API máy chủ; toàn bộ hạ tầng tĩnh trên Amazon S3 riêng tư và CloudFront (OAC, HTTPS) được khai báo bằng Terraform trong \texttt{infra/}.
+% TODO(team): bổ sung liên kết video demo ứng dụng sau khi quay hoàn tất.

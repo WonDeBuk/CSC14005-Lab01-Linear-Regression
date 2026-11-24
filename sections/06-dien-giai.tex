@@ -1,0 +1,85 @@
+\section{Suy diễn thống kê, diễn giải hệ số và góc nhìn Bayesian}
+\label{sec:questions}
+
+Tuân thủ yêu cầu diễn giải hoàn toàn dựa trên kết quả mô hình, chương này trình bày suy diễn định lượng từ mô hình chuẩn M3h (Bảng~\ref{tab:coef}) và M8b, sử dụng mức ý nghĩa $\alpha = 0{,}05$ cùng sai số chuẩn vững HC3~\cite{len2023phantichdulieu}. Mọi hệ số được hiểu là \emph{mức chênh lệch thống kê kỳ vọng} khi giữ cố định các biến đầu vào còn lại, không mang hàm ý nhân quả.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Ước lượng 17 tham số của M3h trên tập huấn luyện: KTC 95\% OLS, KTC 95\% HC3, $p$ (HC3) và KĐTin 95\% Bayesian M6 (prior yếu). Nhóm tham chiếu: xăng thường (\texttt{X}), xe nhỏ, hộp số tự động \texttt{A}.}
+  \label{tab:coef}
+  \footnotesize
+  \setlength{\tabcolsep}{4.2pt}
+  \input{tables/coef-m3h.tex}
+\end{table}
+
+\subsection{Diễn giải tác động biên theo từng nhóm thiết kế}
+% TODO(review): các thành viên rà soát lại phần diễn giải hệ số và điều chỉnh theo văn phong của nhóm.
+\paragraph{Động cơ và hiện tượng biến bỏ sót.}
+Trong hồi quy đơn M1, mỗi lít dung tích tương ứng với độ dốc \slopeOne{} g/km ($t = \tOne$, $p < 0{,}001$), nhưng trong M3h độ dốc riêng chỉ còn \bEngine{} g/km (KTC 95\% HC3: [\bEngineLo; \bEngineHi]). Khoảng chênh này phản ánh độ chệch do biến bỏ sót trong M1: các mẫu xe dung tích lớn đồng thời thường có nhiều xi-lanh hơn và thuộc các nhóm thân xe SUV, bán tải, van (Bảng~\ref{tab:eda-groups}), khiến hệ số đơn biến hấp thụ luôn chênh lệch của các yếu tố đó. Tương tự, số xi-lanh bổ sung thông tin có ý nghĩa ngoài dung tích ($F(\dfOneMOneMTwo, \dfTwoMOneMTwo) = \FMOneMTwo$, $p \PMOneMTwo$; M3h: \bCyl{} g/km mỗi xi-lanh), nhưng do đa cộng tuyến cao ($r = \corrEngCyl$, VIF \vifEngine{} và \vifCyl{}), hai hệ số này chỉ nên hiểu trên miền kết hợp dung tích--xi-lanh thực tế trong dữ liệu.
+
+\paragraph{Thân xe, hộp số, hybrid và tương tác phân khúc.}
+Đưa đồng thời 13 biến nhiên liệu, thân xe và hộp số (M2$\to$M3) đạt $F(\dfOneMTwoMThree, \dfTwoMTwoMThree) = \FMTwoMThree$ ($p \PMTwoMThree$). Từ Bảng~\ref{tab:coef}, các nhóm thân xe lớn hơn đều gắn với mức \COtwo{} cao hơn đáng kể so với xe nhỏ (cao nhất là van \& đặc dụng: +\bVan{} g/km); thêm một cấp hộp số tương ứng mức thấp hơn \bGearsAbs{} g/km; giữa các kiểu hộp số chỉ có vô cấp \texttt{AV} khác biệt có ý nghĩa so với \texttt{A} ($\hat\beta = \bCvt{}$ g/km, đi kèm \texttt{NOGEAR} bù cho \texttt{GEARS} $= 0$), trong khi \texttt{AM}, \texttt{AS}, \texttt{M} không đủ bằng chứng khác biệt. Với cờ hybrid đã hiệu chỉnh, $H_0\!: \beta_{\mathrm{hybrid}} = 0$ bị bác bỏ mạnh ($F(\dfOneMThreeMThreeh, \dfTwoMThreeMThreeh) = \FMThreeMThreeh$, $\hat\beta = \bHybrid{}$ g/km) --- là đặc trưng gắn với mức chênh âm lớn nhất khi giữ cố định động cơ và thân xe.
+
+Đối với mở rộng phi tuyến, kiểm định M3$\to$M4 cho $F(\dfOneMThreeMFour, \dfTwoMThreeMFour) = \FMThreeMFour$ ($p = \PMThreeMFour$): theo nguyên tắc suy diễn tần suất, việc không bác bỏ $H_0$ có nghĩa dữ liệu chưa đủ bằng chứng ủng hộ các số hạng bậc hai và tương tác nhiên liệu, chứ không chứng minh chúng bằng 0. Ngược lại, M8b ($F(\dfOneMThreehMEightb, \dfTwoMThreehMEightb) = \FMThreehMEightb$, $p \PMThreehMEightb$, lưu ý $p$ lạc quan do chọn trên tập train) cho thấy độ dốc theo dung tích phân hóa rõ theo phân khúc (Hình~\ref{fig:m8b-inter}): cao nhất ở van (\slopeVan{} g/km/L) và phẳng hơn rõ ở bán tải (\slopePickup{}) cũng như hybrid (\slopeHybrid{}) so với nhóm nền (\slopeBase{} g/km/L).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig09-m8b-interactions}
+  \caption{Đường dự đoán \COtwo{} theo dung tích động cơ trong M8b cho bốn nhóm xe (6 xi-lanh, xăng thường, AS6) kèm dải KTC 95\% HC3.}
+  \label{fig:m8b-inter}
+\end{figure}
+
+\subsection{Nhiên liệu E85 và nghịch lý Simpson}
+\label{sec:simpson}
+% TODO(review): kiểm tra lại đoạn phân tích nghịch lý Simpson với E85 theo ngôn ngữ phi nhân quả.
+Xét đơn yếu tố trên số liệu thô bằng ANOVA một yếu tố, trung bình \COtwo{} khác biệt rõ giữa bốn loại nhiên liệu ($F(3, \anovaDfTwo) = \anovaF$, $p \anovaP$), trong đó nhóm ethanol E85 có trung bình thô cao nhất (\meanE{} g/km), cao hơn xăng thường (\meanX{} g/km) tới \meanDiffEX{} g/km (Hình~\ref{fig:simpson}(a)). Tuy nhiên, khi kiểm soát đồng thời động cơ, thân xe, hộp số và hybrid trong M3h (Hình~\ref{fig:simpson}(b)), chiều chênh lệch đảo ngược hoàn toàn: so với xăng thường, xăng cao cấp cao hơn \bPremium{} g/km ($p < 0{,}001$), diesel không khác biệt có ý nghĩa ($p = \pDiesel$), còn \textbf{E85 gắn với mức thấp hơn \bEEightyFiveAbs{} g/km} ($\hat\beta = \bEEightyFive{}$, KTC 95\% HC3: [\bEEightyFiveLo; \bEEightyFiveHi], $p < 0{,}001$).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig10-simpson-e85}
+  \caption{Nghịch lý Simpson với E85 qua ba góc nhìn độc lập: (a) trung bình \COtwo{} thô kèm dung tích TB; (b) chênh lệch so với xăng thường trong M3h (KTC 95\% HC3); (c) phân phối chênh lệch \COtwo{}(E85) $-$ \COtwo{}(xăng thường) trên \nPairs{} cặp xe flex-fuel.}
+  \label{fig:simpson}
+\end{figure}
+
+Đây là ví dụ điển hình của \textbf{nghịch lý Simpson}~\cite[Mục~8.8]{len2023phantichdulieu}: trong đội xe 2014, xe chạy E85 tập trung ở các dòng động cơ lớn (dung tích TB \engE{} L so với \engX{} L ở xăng thường), khiến biến gây nhiễu dung tích và thân xe kéo trung bình thô lên cao. Chiều đảo ngược này được xác minh độc lập bằng hai cách: (i) kiểm định $t$ ghép cặp trên \nPairs{} cặp xe flex-fuel cùng hãng, mẫu, động cơ và hộp số cho chênh lệch trung bình \pairDiff{} g/km (KTC 95\%: [\pairLo; \pairHi], $t(\pairDfree) = \pairT$, $p \pairP$, $d_z = \pairDz$, Hình~\ref{fig:simpson}(c)), gần như trùng khớp với \bEEightyFive{} g/km của M3h; và (ii) xác suất hậu nghiệm từ M6 đạt $P(\beta_{\text{E85}} < 0 \mid \mathcal{D}) \approx \probEneg$.
+
+\subsection{Đối chiếu Frequentist--Bayesian và độ nhạy prior}
+\label{sec:bayes}
+% TODO(review): thành viên kiểm tra lại phần so sánh hai trường phái và vai trò của prior ở mẫu nhỏ.
+Hình~\ref{fig:bayes}(a) đặt cạnh nhau KTC 95\% (OLS, HC3) và KĐTin 95\% Bayesian (M6, $\tau = 1.000$) cho 10 hệ số chính của M3h. Tại $n = \nTrain{}$, KĐTin dưới prior yếu gần như trùng khít KTC OLS, trong khi KTC HC3 mở rộng nhẹ ở các biến chịu phương sai thay đổi (dung tích, thân xe van). Như vậy hai trường phái thống nhất về dấu và độ lớn mọi hệ số, khác biệt chủ yếu ở ngôn ngữ diễn giải xác suất hậu nghiệm trực tiếp của tham số.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig11-frequentist-vs-bayes}
+  \caption{(a) So sánh KTC 95\% (OLS, HC3) và KĐTin 95\% Bayesian (M6) cho 10 hệ số chính của M3h. (b) Độ nhạy trung bình hậu nghiệm và KĐTin 95\% của hệ số dung tích theo độ chặt prior $\tau$ trên $n = \nTrain{}$ so với mẫu con $n = 40$.}
+  \label{fig:bayes}
+\end{figure}
+
+Khảo sát độ nhạy theo độ chặt tiên nghiệm $\tau \in [0{,}05; 1.000]$ (Hình~\ref{fig:bayes}(b)) cho thấy khi dữ liệu dồi dào ($n = \nTrain{}$), hệ số dung tích gần như bất biến quanh \engWeakFull{} g/km/L với mọi $\tau \ge 0{,}2$ và chỉ dịch nhẹ về \engTightFull{} tại $\tau = 0{,}1$. Trái lại, trên mẫu con $n = 40$, prior yếu cho ước lượng \engWeakSub{} g/km/L với KĐTin rất rộng [\engWeakLoSub; \engWeakHiSub], trong khi prior chặt ($\tau = 0{,}1$) co rút mạnh về \engTightSub{} g/km/L và thu hẹp độ bất định --- minh họa trực tiếp cơ chế co rút Bayes tương đồng chính quy hóa Ridge khi cỡ mẫu nhỏ.
+
+\subsection{Tổng hợp 10 câu hỏi thống kê đã kiểm định}
+Bảng~\ref{tab:q-summary} hệ thống hóa 10 câu hỏi thống kê trọng tâm đã kiểm định cùng phương pháp, thống kê chính và kết luận rút ra từ dữ liệu.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Tổng hợp 10 câu hỏi thống kê đã kiểm định trong đồ án (mức ý nghĩa $\alpha = 0{,}05$).}
+  \label{tab:q-summary}
+  \footnotesize
+  \setlength{\tabcolsep}{3.6pt}
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{3.9cm} l l >{\raggedright\arraybackslash}p{4.4cm}@{}}
+    \toprule
+    Mã & Câu hỏi / Giả thuyết kiểm định & Kiểm định & Thống kê chính & Kết luận theo dữ liệu \\
+    \midrule
+    Q1 & Dung tích có liên hệ với \COtwo{}? & $t$ (M1), HC3 (M3h) & $t = \tOne$; $\hat\beta = \bEngine{}$ & Bác bỏ $H_0$; độ dốc giảm từ \slopeOne{} xuống \bEngine{} khi kiểm soát biến khác \\
+    Q2 & Xi-lanh bổ sung thông tin ngoài dung tích? & $F$ (M1$\to$M2) & $F = \FMOneMTwo$, $p \PMOneMTwo$ & Bác bỏ $H_0$; cộng tuyến cao (VIF \vifEngine{} và \vifCyl{}) \\
+    Q3 & Nhiên liệu, thân xe, hộp số liên hệ chung? & $F$ (M2$\to$M3), NB & $F = \FMTwoMThree$, $p \nbThreeTwoP$ & Bác bỏ $H_0$; bước giảm RMSE lớn nhất toàn chuỗi \\
+    Q4 & Hybrid gắn với mức \COtwo{} thấp hơn? & $t$ HC3, $F$, NB & $\hat\beta = \bHybrid{}$, $F = \FMThreeMThreeh$ & Bác bỏ $H_0$; thấp hơn \bHybridAbs{} g/km, có ý nghĩa trên CV ($p = \nbHybridP$) \\
+    Q5 & Quan hệ cong hay dung tích $\times$ nhiên liệu? & $F$ (M3$\to$M4) & $F = \FMThreeMFour$, $p = \PMThreeMFour$ & Không bác bỏ $H_0$; không đưa vào mô hình chuẩn \\
+    Q6 & Độ dốc dung tích khác nhau theo phân khúc? & $F$ (M3h$\to$M8b), NB & $F = \FMThreehMEightb$; $p_{\text{NB}} = \nbInterP$ & Bác bỏ theo $F$ ($p$ lạc quan); chưa đủ ý nghĩa theo NB \\
+    Q7 & Số cấp và hộp số CVT liên hệ với \COtwo{}? & $t$ HC3 (M3h) & $\hat\beta_{\text{cấp}} = \bGears{}$; $\hat\beta_{\text{AV}} = \bCvt{}$ & Bác bỏ cho số cấp và CVT ($p = \pCvt$); AM, AS, M chưa rõ khác biệt \\
+    Q8 & Phương sai đồng nhất và độ phủ KDĐ? & BP, JB, test PI & $LM = \bpLM$; Q4 phủ \piCoverQFour\% & Bác bỏ đồng nhất phương sai và chuẩn; cần HC3/bootstrap \\
+    Q9 & Trung bình thô \COtwo{} khác theo nhiên liệu? & ANOVA 1 yếu tố & $F = \anovaF$, $p \anovaP$ & Bác bỏ $H_0$; trung bình thô E85 cao nhất (\meanE{} g/km) \\
+    Q10 & E85 gắn với mức \COtwo{} cao hay thấp hơn? & HC3, $t$ cặp, Bayes & $\bEEightyFive{}$ / $\pairDiff{}$ / $P \approx \probEneg$ & Nghịch lý Simpson: E85 thấp hơn \bEEightyFiveAbs{} (M3h) và \pairDiffAbs{} g/km (cặp) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
