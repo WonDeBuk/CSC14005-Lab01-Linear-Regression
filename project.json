@@ -1,7 +1,14 @@
 {
   "name": "CSC14005 - Lab 01: Linear Regression",
   "main_doc": "main.tex",
-  "engine": "xetex",
+  "engine": "latexmk",
+  "tex": {
+    "distribution": "other",
+    "distribution_label": "TeX tools in /usr/bin",
+    "packages": {},
+    "recorded_at": 1795519472.7311478
+  },
+  "tex_flavor": "pdflatex",
   "checkpoints": {
     "mode": "engine_dependencies"
   },

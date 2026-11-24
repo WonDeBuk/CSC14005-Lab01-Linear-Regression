@@ -1,9 +1,11 @@
-% Báo cáo Lab 01 - Linear Regression (CSC14005). Biên dịch bằng XeLaTeX.
+% Báo cáo Lab 01 - Linear Regression (CSC14005). Biên dịch bằng pdfLaTeX (latexmk, xem latexmkrc).
 % Khuyến nghị 10-20 trang. Mọi số liệu lấy từ models/*.csv; mọi trích dẫn có trong references.bib.
 \documentclass[12pt,a4paper]{article}
 \usepackage[a4paper,margin=2.5cm]{geometry}
-\usepackage{fontspec}
-\setmainfont{TeX Gyre Termes}
+\usepackage[T5]{fontenc}          % bảng mã tiếng Việt (vntex)
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{mathptmx}             % Times, có bản T5 trong vntex
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -11,17 +13,22 @@
 \usepackage{caption}
 \usepackage[numbers]{natbib}
 \usepackage{hyperref}
+\hypersetup{colorlinks, linkcolor=black, citecolor=black, urlcolor=blue, pdftitle={Báo cáo Lab 01: Linear Regression}}
 \graphicspath{{figures/}}
 
-\renewcommand{\contentsname}{Mục lục}
-\renewcommand{\listfigurename}{Danh mục hình}
-\renewcommand{\listtablename}{Danh mục bảng}
-\renewcommand{\refname}{Tài liệu tham khảo}
-\renewcommand{\figurename}{Hình}
-\renewcommand{\tablename}{Bảng}
+% Tên mục theo cách gọi của báo cáo (babel đặt lại các tên này ở \begin{document}).
+\addto\captionsvietnamese{%
+  \renewcommand{\contentsname}{Mục lục}%
+  \renewcommand{\listfigurename}{Danh mục hình}%
+  \renewcommand{\listtablename}{Danh mục bảng}%
+  \renewcommand{\refname}{Tài liệu tham khảo}%
+  \renewcommand{\figurename}{Hình}%
+  \renewcommand{\tablename}{Bảng}%
+}
 
 \begin{document}
 
+\pagenumbering{gobble}
 \begin{titlepage}
   \centering
   {\large ĐẠI HỌC QUỐC GIA TP.HCM\\TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\\KHOA CÔNG NGHỆ THÔNG TIN\par}
@@ -50,11 +57,13 @@
   \vfill
   {\today\par}
 \end{titlepage}
+\pagenumbering{roman}
 
 \tableofcontents
 \listoftables
 \listoffigures
 \clearpage
+\pagenumbering{arabic}
 
 % Khung 8 chương theo mục 16 của moodboard (khoảng 19 trang). Số trang ở mỗi chương là mục tiêu.
 % Mọi số liệu lấy từ models/*.csv hoặc linreg.inference; phần diễn giải do thành viên tự viết.

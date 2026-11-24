@@ -16,7 +16,7 @@
 | Phân tích, mô hình, kiểm định | Python 3.12, pandas, scikit-learn, statsmodels, SciPy, pytest |
 | Ứng dụng web | React 19, TypeScript, Vite, three.js (RenderPixelatedPass), mẫu xe Kenney Car Kit (CC0) |
 | Hạ tầng | Terraform, AWS S3 (riêng tư) + CloudFront (Origin Access Control, HTTPS) |
-| Báo cáo | LaTeX (XeLaTeX) |
+| Báo cáo | LaTeX (pdfLaTeX qua latexmk, tiếng Việt bằng vntex) |
 | CI | GitHub Actions: pytest, build web, `terraform validate` |
 
 Mô hình chạy ngay trên trình duyệt từ `web/public/model.json`, nên ứng dụng không cần máy chủ hay API.
@@ -112,7 +112,7 @@ Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/
 ├── notebooks/             # EDA và thí nghiệm
 ├── src/linreg/            # config, features, data, models, bayes, inference, evaluate, train
 ├── tests/                 # kiểm tra pipeline
-├── main.tex               # báo cáo (XeLaTeX)
+├── main.tex               # báo cáo (pdfLaTeX: latexmk main.tex)
 └── references.bib
 ```
 

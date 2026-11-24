@@ -46,7 +46,7 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 | `infra/` | Terraform: S3 riêng tư + CloudFront (OAC), upload `web/dist` |
 | `notebooks/` | EDA và thí nghiệm, đánh số `01_eda.ipynb`, `02_…` |
 | `figures/` | Hình xuất cho báo cáo |
-| `main.tex`, `references.bib` | Báo cáo (XeLaTeX, tiếng Việt) |
+| `main.tex`, `references.bib` | Báo cáo (pdfLaTeX, tiếng Việt bằng vntex T5; không dùng fontspec) |
 
 ## Lệnh
 
@@ -57,7 +57,7 @@ python -m linreg.train                 # huấn luyện, ghi models/
 python -m linreg.export_web            # cập nhật model.json cho ứng dụng web
 cd web && npm run dev                  # chạy ứng dụng web
 cd infra && terraform apply            # triển khai (sau khi npm run build)
-xelatex main.tex                       # biên dịch báo cáo
+latexmk main.tex                       # biên dịch báo cáo bằng pdfLaTeX (latexmkrc)
 ```
 
 ## Quy ước
