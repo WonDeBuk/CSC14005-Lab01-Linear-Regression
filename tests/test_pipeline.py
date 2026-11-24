@@ -4,8 +4,6 @@ Expected numbers come from the team moodboard (sections 09, 10 and 12), so a
 change that breaks reproducibility of the moodboard fails here.
 """
 
-import json
-
 import pandas as pd
 import pytest
 
@@ -56,8 +54,3 @@ def test_inference():
     f = partial_f_test(train, "M3", "M4").iloc[1]
     assert f["F"] == pytest.approx(1.411, abs=0.001)
 
-
-def test_meta(tmp_path):
-    train_all(load_dataset(), out_dir=tmp_path)
-    meta = json.loads((tmp_path / "meta.json").read_text())
-    assert meta["categorical"]["FUELTYPE"] == ["D", "E", "X", "Z"]

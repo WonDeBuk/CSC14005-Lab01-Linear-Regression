@@ -21,12 +21,14 @@ Tổng hợp từ moodboard của nhóm ("Mission LR-01", [artifact](https://cla
 | So sánh CV | t-test hiệu chỉnh Nadeau–Bengio | 10.2 |
 | Mô hình phi tuyến | Gaussian Process chỉ là mốc trần, không tính vào số mô hình | 12 |
 | Khung báo cáo | 8 chương, khoảng 19 trang (đã đưa vào `main.tex`) | 16 |
+| Ứng dụng | CO₂ Studio (React + three.js, xưởng xe pixel), mô hình chạy trên trình duyệt; bỏ bản Streamlit | 14 |
+| Hosting | S3 + CloudFront, viết bằng Terraform; không dùng EC2 hay Lambda vì không có phần máy chủ | — |
 
 ## Việc còn mở
 
-- [ ] **Mô hình cuối: M3h hay M8b.** M8b có RMSE test 22,6 và BIC thấp nhất nhưng các tương tác được tìm trên chính tập train (p = 0,048 so với M3h cờ cũ, lạc quan). Repo đang để ứng dụng mặc định M8b (`APP_MODEL` trong `src/linreg/train.py`); moodboard mục 14 vẫn chạy M3h cờ cũ.
+- [ ] **Mô hình cuối: M3h hay M8b.** M8b có RMSE test 22,6 và BIC thấp nhất nhưng các tương tác được tìm trên chính tập train (p = 0,048 so với M3h cờ cũ, lạc quan). Ứng dụng web mặc định M8b và cho chọn M3h (`WEB_MODELS` trong `src/linreg/export_web.py`); moodboard mục 14 vẫn chạy M3h cờ cũ.
 - [ ] **Phân công 5 kênh mô hình** (mục 06 và bảng phân công mục 16): M1, M2, M3 (gồm M3h, M4, M4log), Ridge (M5), Bayesian (M6). Điền vào cột "Mô hình phụ trách" trong `README.md`.
-- [ ] **Khoảng dự đoán 95% quá hẹp ở nhóm xe thải nhiều** (phủ 93,9% tập test nói chung, chỉ 87% ở nhóm cao nhất). Ứng dụng Streamlit đang dùng khoảng xấp xỉ ±1,96·σ̂ và có ghi chú điều này.
+- [ ] **Khoảng dự đoán 95% quá hẹp ở nhóm xe thải nhiều** (phủ 93,9% tập test nói chung, chỉ 87% ở nhóm cao nhất). Ứng dụng web tính khoảng dự đoán OLS đầy đủ (σ̂·√(1 + h)) nhưng vẫn giả định phương sai không đổi, nên vẫn hẹp ở nhóm này.
 - [ ] **Mức Bayesian thầy mong đợi.** Đề Lab 01 không nhắc Bayesian; cần xác nhận với thầy.
 - [ ] **Chuyển phần còn lại của moodboard thành code:** kiểm định ghép cặp 78 xe flex-fuel, bootstrap hệ số, đường cong học, bias–variance, độ bền theo tỉ lệ chia và nhiễu, 20 câu hỏi kiểm định (mục 10, 11, 13).
-- [ ] **Ứng dụng nộp bài:** xưởng xe 3D trên moodboard (three.js) hay bản Streamlit trong repo, hoặc cả hai.
+- [ ] **Video demo** quay trên [bản đang chạy](https://d1dts9wd5j3er9.cloudfront.net).

@@ -5,11 +5,9 @@ statsmodels>=0.14
 scipy>=1.11
 matplotlib>=3.8
 seaborn>=0.13
-plotly>=5.18
-streamlit>=1.50
 joblib>=1.3
 jupyter>=1.0
 pytest>=8.0
 
-# installs src/linreg so `import linreg` works in the app and notebooks
+# installs src/linreg so `import linreg` works in scripts and notebooks
 -e .

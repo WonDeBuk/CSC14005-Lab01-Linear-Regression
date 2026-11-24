@@ -26,7 +26,8 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
    - So sánh mô hình trên các fold CV: dùng t-test hiệu chỉnh **Nadeau–Bengio**, không dùng t ghép cặp thường.
    - Tương tác hay biến tìm bằng chọn biến trên tập train: ghi rõ p-value bị lạc quan.
    - Không xoá các xe có phần dư lớn: chúng là xe thật (Bentley, Audi R8, …), không phải lỗi nhập liệu.
-8. **Repo phải public.** Không commit secrets, `.joblib`, file build LaTeX, thư mục `.oleafly/`.
+8. **Repo phải public.** Không commit secrets, `.joblib`, file build LaTeX, thư mục `.oleafly/`, state Terraform (`*.tfstate`), `node_modules/`, `web/dist/`.
+9. **Đổi mô hình thì chạy lại `python -m linreg.export_web`**, để số trên ứng dụng khớp với Python.
 
 ## Cấu trúc
 
@@ -40,7 +41,9 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 | `src/linreg/inference.py` | OLS statsmodels (HC3), F từng phần, Breusch–Pagan, Jarque–Bera |
 | `src/linreg/evaluate.py` | MAE, MSE, RMSE, R², CV, t-test Nadeau–Bengio, bảng hệ số |
 | `src/linreg/train.py` | Huấn luyện tất cả, ghi `models/` |
-| `app/streamlit_app.py` | Ứng dụng dự đoán CO₂ |
+| `src/linreg/export_web.py` | Xuất hệ số M3h, M8b, (XᵀX)⁻¹ và σ² ra `web/public/model.json` |
+| `web/` | CO₂ Studio: React + TypeScript + three.js; `src/model.ts` tính dự đoán và khoảng, `src/scene/Studio.ts` là cảnh 3D |
+| `infra/` | Terraform: S3 riêng tư + CloudFront (OAC), upload `web/dist` |
 | `notebooks/` | EDA và thí nghiệm, đánh số `01_eda.ipynb`, `02_…` |
 | `figures/` | Hình xuất cho báo cáo |
 | `main.tex`, `references.bib` | Báo cáo (XeLaTeX, tiếng Việt) |
@@ -51,7 +54,9 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 pip install -r requirements.txt        # cài phụ thuộc + package linreg
 pytest -q                              # kiểm tra pipeline, khớp số với moodboard
 python -m linreg.train                 # huấn luyện, ghi models/
-streamlit run app/streamlit_app.py     # chạy ứng dụng
+python -m linreg.export_web            # cập nhật model.json cho ứng dụng web
+cd web && npm run dev                  # chạy ứng dụng web
+cd infra && terraform apply            # triển khai (sau khi npm run build)
 xelatex main.tex                       # biên dịch báo cáo
 ```
 

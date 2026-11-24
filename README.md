@@ -7,6 +7,19 @@
 - Dữ liệu: [data/README.md](data/README.md)
 - Hướng dẫn cho AI agent và quy ước code: [AGENTS.md](AGENTS.md)
 - Moodboard của nhóm: [Mission LR-01](https://claude.ai/artifact/95knfAAW2ceeRQWnin9HKj)
+- **Ứng dụng đang chạy: [CO₂ Studio](https://d1dts9wd5j3er9.cloudfront.net)**
+
+## Tech stack
+
+| Phần | Công nghệ |
+|------|-----------|
+| Phân tích, mô hình, kiểm định | Python 3.12, pandas, scikit-learn, statsmodels, SciPy, pytest |
+| Ứng dụng web | React 19, TypeScript, Vite, three.js (RenderPixelatedPass), mẫu xe Kenney Car Kit (CC0) |
+| Hạ tầng | Terraform, AWS S3 (riêng tư) + CloudFront (Origin Access Control, HTTPS) |
+| Báo cáo | LaTeX (XeLaTeX) |
+| CI | GitHub Actions: pytest, build web, `terraform validate` |
+
+Mô hình chạy ngay trên trình duyệt từ `web/public/model.json`, nên ứng dụng không cần máy chủ hay API.
 
 ## Thành viên
 
@@ -33,8 +46,8 @@ pytest -q
 ## Sử dụng
 
 ```bash
-python -m linreg.train                 # huấn luyện 5 mô hình, ghi models/metrics.csv và hệ số
-streamlit run app/streamlit_app.py     # ứng dụng dự đoán CO₂
+python -m linreg.train        # huấn luyện 9 mô hình, ghi models/metrics.csv và hệ số
+python -m linreg.export_web   # xuất hệ số M3h, M8b cho ứng dụng web
 ```
 
 Kiểm định (Frequentist, sai số chuẩn HC3) trên tập train:
@@ -55,11 +68,21 @@ print(partial_f_test(train, "M3", "M3h"))     # F từng phần cho mô hình l�
 Xưởng xe 3D pixel (React + TypeScript + three.js) trong [`web/`](web/). Chọn thân xe, động cơ, nhiên liệu, hộp số và hybrid; mô hình M3h hoặc M8b tính CO₂ ngay trên trình duyệt, kèm khoảng tin cậy và khoảng dự đoán 95%, vị trí trong đội xe 2014 và phần đóng góp của từng yếu tố. Mẫu xe: [Kenney Car Kit](https://kenney.nl/assets/car-kit) (CC0).
 
 ```bash
-python -m linreg.export_web    # xuất hệ số mô hình ra web/public/model.json
 cd web && npm install && npm run dev
 ```
 
-Triển khai lên AWS (S3 + CloudFront, không máy chủ): [`infra/deploy.sh`](infra/deploy.sh) dùng template [`infra/web-hosting.yaml`](infra/web-hosting.yaml). Xoá toàn bộ: `infra/deploy.sh --destroy`.
+### Triển khai lên AWS
+
+Hạ tầng viết bằng Terraform trong [`infra/`](infra/): bucket S3 riêng tư, CloudFront với Origin Access Control, header bảo mật, và upload toàn bộ `web/dist`. File JS/CSS có hash trong tên nên được cache một năm; các file còn lại luôn kiểm tra lại, nên không cần xoá cache CloudFront sau mỗi lần cập nhật.
+
+```bash
+aws login --region ap-southeast-1             # hoặc aws configure sso
+python -m linreg.export_web && (cd web && npm ci && npm run build)
+cd infra && terraform init && terraform apply
+terraform destroy                             # xoá toàn bộ khi không dùng nữa
+```
+
+State của Terraform nằm cục bộ trong `infra/` (không commit). Chỉ người triển khai giữ state; muốn cả nhóm cùng triển khai thì chuyển sang backend S3.
 
 ## Mô hình
 
@@ -80,9 +103,8 @@ Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/
 ## Cấu trúc thư mục
 
 ```
-├── app/streamlit_app.py   # ứng dụng Streamlit
-├── web/                   # CO₂ Studio: React + three.js
-├── infra/                 # CloudFormation và script triển khai AWS
+├── web/                   # CO₂ Studio: React + TypeScript + three.js
+├── infra/                 # Terraform: S3 + CloudFront
 ├── data/raw/              # FuelConsumptionCo2.csv (1.067 xe, 2014)
 ├── docs/                  # đề bài, quyết định của nhóm
 ├── figures/               # hình cho báo cáo
