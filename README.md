@@ -9,8 +9,8 @@
 ## Cài đặt
 
 ```bash
-git clone https://github.com/WonDeBuk/CSC14005Lab01LinearRegression.git
-cd CSC14005Lab01LinearRegression
+git clone https://github.com/WonDeBuk/CSC14005-Lab01-Linear-Regression.git
+cd CSC14005-Lab01-Linear-Regression
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pytest -q
