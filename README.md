@@ -50,6 +50,17 @@ print(fit_ols(train, "M3h").summary())        # t-test từng hệ số, KTC 95%
 print(partial_f_test(train, "M3", "M3h"))     # F từng phần cho mô hình lồng nhau
 ```
 
+## Ứng dụng web: CO₂ Studio
+
+Xưởng xe 3D pixel (React + TypeScript + three.js) trong [`web/`](web/). Chọn thân xe, động cơ, nhiên liệu, hộp số và hybrid; mô hình M3h hoặc M8b tính CO₂ ngay trên trình duyệt, kèm khoảng tin cậy và khoảng dự đoán 95%, vị trí trong đội xe 2014 và phần đóng góp của từng yếu tố. Mẫu xe: [Kenney Car Kit](https://kenney.nl/assets/car-kit) (CC0).
+
+```bash
+python -m linreg.export_web    # xuất hệ số mô hình ra web/public/model.json
+cd web && npm install && npm run dev
+```
+
+Triển khai lên AWS (S3 + CloudFront, không máy chủ): [`infra/deploy.sh`](infra/deploy.sh) dùng template [`infra/web-hosting.yaml`](infra/web-hosting.yaml). Xoá toàn bộ: `infra/deploy.sh --destroy`.
+
 ## Mô hình
 
 Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/models.py`](src/linreg/models.py); mọi mô hình tuyến tính theo tham số. M7 (rò rỉ qua mức tiêu thụ nhiên liệu) bị loại có chủ đích. Kết quả từ `python -m linreg.train` (chia 854/213 bằng `default_rng(42)`, CV 10-fold trên tập train) khớp từng số với moodboard; `pytest` khoá các số này.
@@ -69,7 +80,9 @@ Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/
 ## Cấu trúc thư mục
 
 ```
-├── app/streamlit_app.py   # ứng dụng dự đoán CO₂
+├── app/streamlit_app.py   # ứng dụng Streamlit
+├── web/                   # CO₂ Studio: React + three.js
+├── infra/                 # CloudFormation và script triển khai AWS
 ├── data/raw/              # FuelConsumptionCo2.csv (1.067 xe, 2014)
 ├── docs/                  # đề bài, quyết định của nhóm
 ├── figures/               # hình cho báo cáo
