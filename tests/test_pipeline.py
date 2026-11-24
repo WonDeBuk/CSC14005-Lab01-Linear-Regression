@@ -1,30 +1,35 @@
-"""Smoke test: every model trains and scores on a synthetic dataset."""
+"""End-to-end checks on the committed CO2 dataset."""
 
 import json
 
-import numpy as np
-import pandas as pd
-from sklearn.datasets import make_regression
-
-from linreg.data import load_dataset
+from linreg import config
+from linreg.data import load_dataset, load_frame
+from linreg.inference import fit_ols
 from linreg.models import MODELS
 from linreg.train import train_all
 
 
-def synthetic_frame(n=300):
-    X, y = make_regression(n_samples=n, n_features=4, noise=5.0, random_state=0)
-    df = pd.DataFrame(X, columns=["x1", "x2", "x3", "x4"])
-    df["group"] = np.random.default_rng(0).choice(["a", "b", "c"], size=n)
-    df["y"] = y - y.min() + 1  # positive, so log_target_ols is valid
-    return df
+def test_features():
+    df = load_frame()
+    assert len(df) == 1067
+    assert not set(config.DATASET["drop"]) & set(df.columns)  # no fuel-consumption leakage
+    assert df["BODY"].notna().all()
+    assert df["HYBRID"].sum() == 34  # includes Lexus "...h", Prius, CR-Z
 
 
 def test_train_all(tmp_path):
-    ds = load_dataset(synthetic_frame(), {"target": "y"})
-    metrics = train_all(ds, out_dir=tmp_path)
+    ds = load_dataset()
+    assert (len(ds.X_train), len(ds.X_test)) == (854, 213)
 
-    assert set(metrics["model"]) == set(MODELS)
-    assert metrics["R2"].max() > 0.9
+    metrics = train_all(ds, out_dir=tmp_path).set_index("model")
+    assert set(metrics.index) == set(MODELS)
+    assert metrics.loc["m3h_ols", "CV_RMSE_mean"] < metrics.loc["m1_engine", "CV_RMSE_mean"]
+    assert metrics["R2"].min() > 0.7
+
     meta = json.loads((tmp_path / "meta.json").read_text())
-    assert meta["target"] == "y"
-    assert meta["categorical_features"] == {"group": ["a", "b", "c"]}
+    assert meta["categorical"]["FUELTYPE"] == ["D", "E", "X", "Z"]
+
+
+def test_ols_inference():
+    result = fit_ols(load_frame())
+    assert result.params["HYBRID"] < 0 and result.pvalues["HYBRID"] < 1e-6

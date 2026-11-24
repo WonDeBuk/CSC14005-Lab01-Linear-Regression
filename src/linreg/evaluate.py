@@ -2,9 +2,8 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import KFold, cross_val_score
+from sklearn.model_selection import KFold, cross_validate
 
 from . import config
 
@@ -19,16 +18,19 @@ def regression_metrics(y_true, y_pred) -> dict[str, float]:
     }
 
 
-def cv_r2(model, X, y) -> tuple[float, float]:
+def cv_scores(model, X, y) -> dict[str, float]:
     folds = KFold(config.CV_FOLDS, shuffle=True, random_state=config.RANDOM_STATE)
-    scores = cross_val_score(model, X, y, cv=folds, scoring="r2")
-    return float(scores.mean()), float(scores.std())
+    scores = cross_validate(model, X, y, cv=folds, scoring={"RMSE": "neg_root_mean_squared_error", "R2": "r2"})
+    return {
+        "CV_RMSE_mean": float(-scores["test_RMSE"].mean()),
+        "CV_RMSE_std": float(scores["test_RMSE"].std()),
+        "CV_R2_mean": float(scores["test_R2"].mean()),
+    }
 
 
 def coefficients(model) -> pd.DataFrame:
-    """Coefficients on the standardized feature scale, largest magnitude first."""
-    pipeline = model.regressor_ if isinstance(model, TransformedTargetRegressor) else model
-    names = pipeline.named_steps["prep"].get_feature_names_out()
-    coefs = pipeline.named_steps["model"].coef_
-    table = pd.DataFrame({"feature": names, "coefficient": coefs})
-    return table.reindex(table["coefficient"].abs().sort_values(ascending=False).index).reset_index(drop=True)
+    """Coefficients in model units (raw g/km per unit for OLS, per SD for scaled models)."""
+    names = model.named_steps["prep"].get_feature_names_out()
+    table = pd.DataFrame({"feature": names, "coefficient": model.named_steps["model"].coef_})
+    intercept = pd.DataFrame({"feature": ["(intercept)"], "coefficient": [model.named_steps["model"].intercept_]})
+    return pd.concat([intercept, table], ignore_index=True)

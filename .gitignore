@@ -13,6 +13,7 @@ venv/
 
 # Data and artifacts (dataset is linked in data/README.md, models are re-trainable)
 data/raw/*
+!data/raw/FuelConsumptionCo2.csv
 data/processed/*
 !data/**/.gitkeep
 models/*

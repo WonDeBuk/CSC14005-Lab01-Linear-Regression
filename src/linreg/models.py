@@ -1,71 +1,71 @@
-"""Linear Regression model variants.
+"""Linear Regression model variants, one per group member (5 members -> 5 models).
 
-The lab requires at least one model per group member. Every entry in MODELS is a
-linear model in its parameters; keep, drop or add entries so the count matches
-the group, and justify each choice in the report (section "Thiết kế mô hình").
+All models are linear in their parameters. Names follow the team moodboard
+(M1, M3h, M8b). TODO(team): the moodboard numbers Ridge/Bayesian as M4/M5 in
+section 06 but M5/M6 in section 09; pick one scheme and use it in the report.
 """
 
 from collections.abc import Callable
+from dataclasses import dataclass, field
 
 import numpy as np
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import ElasticNetCV, HuberRegressor, LassoCV, LinearRegression, RidgeCV
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import BayesianRidge, LinearRegression, RidgeCV
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from . import config
+from .features import INTERACTIONS, REFERENCE
 
 ALPHAS = np.logspace(-3, 3, 50)
 
-
-def build_preprocessor(numeric: list[str], categorical: list[str], poly_degree: int = 1) -> ColumnTransformer:
-    numeric_steps = [("impute", SimpleImputer(strategy="median"))]
-    if poly_degree > 1:
-        numeric_steps.append(("poly", PolynomialFeatures(degree=poly_degree, include_bias=False)))
-    numeric_steps.append(("scale", StandardScaler()))
-
-    categorical_steps = [
-        ("impute", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", drop="first", sparse_output=False)),
-    ]
-    return ColumnTransformer(
-        [("num", Pipeline(numeric_steps), numeric), ("cat", Pipeline(categorical_steps), categorical)],
-        verbose_feature_names_out=False,
-    )
+DESIGN_NUMERIC = ["ENGINESIZE", "CYLINDERS", "HYBRID"]
+DESIGN_CATEGORICAL = ["FUELTYPE", "BODY", "TRANS_TYPE"]
 
 
-def _pipeline(regressor, numeric, categorical, poly_degree=1) -> Pipeline:
-    return Pipeline([("prep", build_preprocessor(numeric, categorical, poly_degree)), ("model", regressor)])
+@dataclass(frozen=True)
+class ModelSpec:
+    description: str
+    regressor: Callable
+    numeric: list[str]
+    categorical: list[str] = field(default_factory=list)
+    # OLS stays on raw units so coefficients read as g/km per unit;
+    # penalized/Bayesian models need a common scale for the prior/penalty.
+    scale: bool = False
 
 
-MODELS: dict[str, Callable[[list[str], list[str]], Pipeline]] = {
-    # M1: plain OLS on all features, the baseline every other model is compared with.
-    "ols": lambda num, cat: _pipeline(LinearRegression(), num, cat),
-    # M2: L2 penalty, shrinks coefficients when features are correlated.
-    "ridge": lambda num, cat: _pipeline(RidgeCV(alphas=ALPHAS), num, cat),
-    # M3: L1 penalty, drives weak coefficients to exactly zero (feature selection).
-    "lasso": lambda num, cat: _pipeline(
-        LassoCV(alphas=ALPHAS, cv=config.CV_FOLDS, random_state=config.RANDOM_STATE, max_iter=20_000), num, cat
+MODELS: dict[str, ModelSpec] = {
+    "m1_engine": ModelSpec(
+        "M1: OLS on engine size only, the one-variable baseline",
+        LinearRegression, ["ENGINESIZE"],
     ),
-    # M4: mix of L1 and L2.
-    "elasticnet": lambda num, cat: _pipeline(
-        ElasticNetCV(
-            l1_ratio=[0.1, 0.5, 0.9], alphas=ALPHAS, cv=config.CV_FOLDS,
-            random_state=config.RANDOM_STATE, max_iter=20_000,
-        ),
-        num, cat,
+    "m3h_ols": ModelSpec(
+        "M3h: OLS on the design features (engine, cylinders, fuel, body, transmission, hybrid)",
+        LinearRegression, DESIGN_NUMERIC, DESIGN_CATEGORICAL,
     ),
-    # M5: degree-2 polynomial basis on numeric features + Ridge (still linear in parameters).
-    "poly2_ridge": lambda num, cat: _pipeline(RidgeCV(alphas=ALPHAS), num, cat, poly_degree=2),
-    # M6: OLS on log(1 + y), for a right-skewed positive target.
-    "log_target_ols": lambda num, cat: TransformedTargetRegressor(
-        regressor=_pipeline(LinearRegression(), num, cat), func=np.log1p, inverse_func=np.expm1
+    "m3h_ridge": ModelSpec(
+        "Ridge on the M3h features, alpha chosen by CV (L2 / MAP with a Gaussian prior)",
+        lambda: RidgeCV(alphas=ALPHAS), DESIGN_NUMERIC, DESIGN_CATEGORICAL, scale=True,
     ),
-    # M7: Huber loss, less sensitive to outliers in y.
-    "huber": lambda num, cat: _pipeline(HuberRegressor(max_iter=2_000), num, cat),
+    "m3h_bayes": ModelSpec(
+        "Bayesian linear regression on the M3h features, prior precision by evidence maximization",
+        BayesianRidge, DESIGN_NUMERIC, DESIGN_CATEGORICAL, scale=True,
+    ),
+    "m8b_interactions": ModelSpec(
+        "M8b: M3h + engine size x (pickup, van, hybrid) interactions",
+        LinearRegression, DESIGN_NUMERIC + INTERACTIONS, DESIGN_CATEGORICAL,
+    ),
 }
 
 
-def build_model(name: str, numeric: list[str], categorical: list[str]) -> Pipeline:
-    return MODELS[name](numeric, categorical)
+def build_model(name: str) -> Pipeline:
+    spec = MODELS[name]
+    numeric = StandardScaler() if spec.scale else "passthrough"
+    encoder = OneHotEncoder(
+        drop=[REFERENCE[c] for c in spec.categorical] or None,
+        handle_unknown="ignore", sparse_output=False,
+    )
+    prep = ColumnTransformer(
+        [("num", numeric, spec.numeric), ("cat", encoder, spec.categorical)],
+        verbose_feature_names_out=False,
+    )
+    return Pipeline([("prep", prep), ("model", spec.regressor())])

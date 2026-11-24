@@ -1,4 +1,4 @@
-"""Project-wide settings. Edit DATASET once the group has chosen its dataset."""
+"""Project-wide settings."""
 
 from pathlib import Path
 
@@ -10,15 +10,19 @@ MODELS_DIR = ROOT / "models"
 FIGURES_DIR = ROOT / "figures"
 
 RANDOM_STATE = 42
-TEST_SIZE = 0.2
-CV_FOLDS = 5
+TEST_SIZE = 213  # 1,067 cars -> 854 train / 213 test, as on the team moodboard
+CV_FOLDS = 10
 
-# TODO(team): fill in after choosing the dataset (see data/README.md).
+# Fuel Consumption Ratings 2014, Natural Resources Canada (see data/README.md).
 DATASET = {
-    "file": RAW_DIR / "dataset.csv",
-    "target": None,  # e.g. "price"
-    "drop": [],  # id columns, leakage columns, ...
-    # None = infer from dtypes; set explicit lists once EDA is done.
-    "numeric_features": None,
-    "categorical_features": None,
+    "file": RAW_DIR / "FuelConsumptionCo2.csv",
+    "target": "CO2EMISSIONS",  # g/km
+    # CO2 is computed from fuel consumption (fixed ratio per fuel type), so these
+    # columns would leak the target: R² ≈ 1 just by re-reading the formula.
+    "drop": [
+        "FUELCONSUMPTION_CITY",
+        "FUELCONSUMPTION_HWY",
+        "FUELCONSUMPTION_COMB",
+        "FUELCONSUMPTION_COMB_MPG",
+    ],
 }

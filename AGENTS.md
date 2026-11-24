@@ -4,46 +4,60 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 
 ## Bối cảnh
 
-Đồ án **CSC14005 Lab 01 — Linear Regression** (môn Nhập môn học máy). Yêu cầu đầy đủ: [docs/requirements.md](docs/requirements.md). Sản phẩm cần nộp: mã nguồn, dữ liệu (hoặc link), `requirements.txt`, ứng dụng dự đoán, video demo, báo cáo PDF 10–20 trang (`main.tex`).
+Đồ án **CSC14005 Lab 01 — Linear Regression** (Nhập môn học máy, Khoa CNTT, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM). GVHD: Thầy Bùi Tiến Lên, Thầy Võ Nhật Tân. Nhóm 5 thành viên (xem `README.md`).
 
-## Quy tắc bắt buộc (từ đề bài)
+- **Bài toán:** ước tính lượng phát thải CO₂ (g/km) của xe hạng nhẹ chỉ từ thông số thiết kế (động cơ, xi-lanh, nhiên liệu, nhóm thân xe, hộp số, hybrid), tức những thứ có trước khi xe chạy thử.
+- **Mục tiêu:** cực tiểu RMSE ngoài mẫu (CV 10-fold) mà mô hình vẫn diễn giải được, và trả lời có kiểm định câu hỏi "quyết định thiết kế nào đổi thành bao nhiêu gam CO₂".
+- **Dữ liệu:** Fuel Consumption Ratings 2014, Canada, 1.067 xe. Chi tiết: [data/README.md](data/README.md).
+- **Lăng kính thống kê:** thầy yêu cầu trình bày Linear Regression dưới cả hai trường phái **Frequentist** (OLS, kiểm định t/F, khoảng tin cậy) và **Bayesian** (prior, posterior, khoảng đáng tin). Báo cáo phải **đặt và kiểm định câu hỏi thống kê**, không chỉ xây mô hình rồi so điểm. Tài liệu chính: sách "Phân tích dữ liệu" (book-stat) của thầy Lên, chương 5–8, 10; khoá [PSU STAT 501](https://online.stat.psu.edu/stat501/).
+- **Đề bài:** [docs/requirements.md](docs/requirements.md). **Các quyết định đã có và việc còn mở:** [docs/decisions.md](docs/decisions.md).
 
-1. **AI chỉ hỗ trợ, người quyết định.** Đề bài trừ tới 50% điểm nếu lạm dụng AI hoặc nội dung sai. Agent không tự viết hoàn chỉnh phần phân tích, kết luận hay diễn giải trong báo cáo: chỉ soạn nháp, đánh dấu `% TODO(review)` trong LaTeX để thành viên nhóm đọc lại và viết lại bằng lời của mình.
-2. **Diễn giải chỉ dựa trên kết quả mô hình.** Không thêm kiến thức miền bên ngoài (ví dụ "giá nhà ở trung tâm cao hơn vì…") nếu số liệu của mô hình không cho thấy điều đó.
-3. **Không bịa số liệu.** Mọi con số trong báo cáo phải lấy từ `models/metrics.csv`, `models/*_coefficients.csv` hoặc output notebook đã chạy. Không bịa trích dẫn: mọi tài liệu tham khảo phải có thật và nằm trong `references.bib`.
-4. **Số mô hình ≥ số thành viên.** Mô hình chính là Linear Regression và các biến thể tuyến tính theo tham số (`src/linreg/models.py`).
-5. **Repo phải public và link dữ liệu phải truy cập được** (link hỏng = trừ 50%). Không commit dữ liệu lớn; ghi link vào `data/README.md`.
+## Quy tắc bắt buộc
+
+1. **AI chỉ hỗ trợ, người quyết định.** Đề bài trừ tới 50% điểm nếu lạm dụng AI hoặc nội dung sai. Agent không tự viết hoàn chỉnh phần phân tích, kết luận hay diễn giải trong báo cáo: chỉ soạn nháp, đánh dấu `% TODO(review)` trong LaTeX để thành viên đọc lại và viết lại bằng lời của mình.
+2. **Diễn giải chỉ dựa trên kết quả mô hình**, không đem kiến thức miền bên ngoài vào nếu số liệu không cho thấy điều đó.
+3. **Không bịa số liệu hay trích dẫn.** Số trong báo cáo lấy từ `models/*.csv`, output của `linreg.inference` hoặc notebook đã chạy. Tài liệu tham khảo phải có thật và nằm trong `references.bib`.
+4. **Không dùng các cột `FUELCONSUMPTION_*`** làm đầu vào: CO₂ được tính thẳng từ chúng (rò rỉ dữ liệu, R² ≈ 1).
+5. **Mọi mô hình tuyến tính theo tham số.** Mô hình phi tuyến (Kernel Ridge, Gaussian Process, …) chỉ được dùng làm mốc so sánh, không tính vào "số mô hình ≥ số thành viên".
+6. **Mỗi bước xử lý và mỗi thí nghiệm trả lời What / Why / How:** điều gì đang xảy ra với dữ liệu, tại sao, xử lý bằng kiến thức nào. Kèm biểu đồ trước/sau.
+7. **Kiểm định đúng cách:**
+   - Phần dư có phương sai thay đổi (Breusch–Pagan p < 10⁻¹⁴): dùng sai số chuẩn **HC3** hoặc bootstrap cho kiểm định hệ số.
+   - So sánh mô hình trên các fold CV: dùng t-test hiệu chỉnh **Nadeau–Bengio**, không dùng t ghép cặp thường.
+   - Tương tác hay biến tìm bằng chọn biến trên tập train: ghi rõ p-value bị lạc quan.
+   - Không xoá các xe có phần dư lớn: chúng là xe thật (Bentley, Audi R8, …), không phải lỗi nhập liệu.
+8. **Repo phải public.** Không commit secrets, `.joblib`, file build LaTeX, thư mục `.oleafly/`.
 
 ## Cấu trúc
 
 | Đường dẫn | Nội dung |
 |-----------|----------|
-| `src/linreg/config.py` | Đường dẫn, seed, cấu hình dataset (biến mục tiêu, đặc trưng) |
-| `src/linreg/data.py` | Đọc CSV, chia train/test |
-| `src/linreg/models.py` | `MODELS`: danh sách mô hình, mỗi mô hình là một `Pipeline` sklearn |
+| `src/linreg/config.py` | Đường dẫn, seed 42, chia 854/213, CV 10-fold, cột rò rỉ cần bỏ |
+| `src/linreg/features.py` | Nhóm thân xe, loại hộp số, cờ hybrid, biến tương tác |
+| `src/linreg/data.py` | Đọc CSV, thêm đặc trưng, chia train/test |
+| `src/linreg/models.py` | `MODELS`: 5 mô hình sklearn (M1, M3h OLS/Ridge/Bayesian, M8b) |
+| `src/linreg/inference.py` | OLS statsmodels với HC3, kiểm định Breusch–Pagan |
 | `src/linreg/evaluate.py` | MAE, MSE, RMSE, R², CV, bảng hệ số |
 | `src/linreg/train.py` | Huấn luyện tất cả, ghi `models/` |
-| `app/streamlit_app.py` | Ứng dụng dự đoán và trực quan hoá |
+| `app/streamlit_app.py` | Ứng dụng dự đoán CO₂ |
 | `notebooks/` | EDA và thí nghiệm, đánh số `01_eda.ipynb`, `02_…` |
-| `figures/` | Hình xuất cho báo cáo (PDF/PNG) |
+| `figures/` | Hình xuất cho báo cáo |
 | `main.tex`, `references.bib` | Báo cáo (XeLaTeX, tiếng Việt) |
 
 ## Lệnh
 
 ```bash
 pip install -r requirements.txt        # cài phụ thuộc + package linreg
-pytest -q                              # smoke test trên dữ liệu tổng hợp
+pytest -q                              # kiểm tra pipeline trên dữ liệu thật
 python -m linreg.train                 # huấn luyện, ghi models/
 streamlit run app/streamlit_app.py     # chạy ứng dụng
-xelatex main.tex                       # biên dịch báo cáo (hoặc dùng Oleafly/Overleaf)
+xelatex main.tex                       # biên dịch báo cáo
 ```
 
 ## Quy ước
 
-- Python ≥ 3.10, seed cố định `config.RANDOM_STATE` cho mọi thứ ngẫu nhiên.
-- Tiền xử lý nằm **trong** `Pipeline` để tránh rò rỉ dữ liệu từ tập test.
-- Thêm mô hình: thêm một entry vào `MODELS` kèm comment một dòng giải thích lý do; chạy lại `pytest`.
-- Hình cho báo cáo: lưu vào `figures/` bằng code (notebook hoặc script), không chỉnh tay.
-- Báo cáo viết bằng tiếng Việt; tên biến, code, commit message bằng tiếng Anh.
-- Mỗi thay đổi đi qua branch + pull request; ít nhất một thành viên khác review trước khi merge vào `main`.
-- Không commit: dữ liệu thô, file `.joblib`, `.env`, file build LaTeX, thư mục `.oleafly/`.
+- Python ≥ 3.10; mọi thứ ngẫu nhiên dùng `config.RANDOM_STATE`.
+- Tiền xử lý nằm **trong** `Pipeline` để không rò rỉ từ tập test.
+- Thêm mô hình: thêm một `ModelSpec` vào `MODELS` (kèm mô tả lý do), thêm công thức vào `inference.FORMULAS` nếu là OLS, chạy lại `pytest`.
+- Hình cho báo cáo: sinh bằng code vào `figures/`, không chỉnh tay.
+- Báo cáo bằng tiếng Việt; tên biến, code, commit message bằng tiếng Anh.
+- Mỗi thay đổi đi qua branch + pull request, có ít nhất một thành viên khác review.

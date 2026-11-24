@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from . import config
+from .features import add_features
 
 
 @dataclass
@@ -15,41 +16,23 @@ class Dataset:
     X_test: pd.DataFrame
     y_train: pd.Series
     y_test: pd.Series
-    numeric_features: list[str]
-    categorical_features: list[str]
     target: str
 
 
 def load_frame(path: Path | None = None) -> pd.DataFrame:
+    """Raw data plus derived features, leakage columns removed."""
     path = Path(path or config.DATASET["file"])
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found. Download the dataset as described in data/README.md.")
-    return pd.read_csv(path)
+        raise FileNotFoundError(f"{path} not found. See data/README.md.")
+    df = pd.read_csv(path).drop(columns=config.DATASET["drop"])
+    return add_features(df)
 
 
-def infer_feature_types(df: pd.DataFrame, target: str) -> tuple[list[str], list[str]]:
-    features = df.drop(columns=[target])
-    numeric = features.select_dtypes(include="number").columns.tolist()
-    categorical = [c for c in features.columns if c not in numeric]
-    return numeric, categorical
-
-
-def load_dataset(df: pd.DataFrame | None = None, settings: dict | None = None) -> Dataset:
-    settings = {**config.DATASET, **(settings or {})}
-    target = settings["target"]
-    if target is None:
-        raise ValueError("Set DATASET['target'] in src/linreg/config.py.")
-
-    df = load_frame(settings["file"]) if df is None else df
-    df = df.drop(columns=settings["drop"]).dropna(subset=[target])
-
-    numeric, categorical = infer_feature_types(df, target)
-    numeric = settings["numeric_features"] or numeric
-    categorical = settings["categorical_features"] or categorical
-
-    X = df[numeric + categorical]
-    y = df[target]
+def load_dataset(df: pd.DataFrame | None = None) -> Dataset:
+    target = config.DATASET["target"]
+    df = load_frame() if df is None else df
+    X, y = df.drop(columns=[target]), df[target]
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=config.TEST_SIZE, random_state=config.RANDOM_STATE
     )
-    return Dataset(X_train, X_test, y_train, y_test, numeric, categorical, target)
+    return Dataset(X_train, X_test, y_train, y_test, target)
