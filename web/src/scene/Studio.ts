@@ -19,7 +19,8 @@ const MODEL_FILE: Record<Body, string> = {
   pickup: 'truck',
   van: 'van',
 }
-export const FUEL_COLOR: Record<Fuel, string> = { X: '#0d7480', Z: '#2f6fd6', D: '#3b4a52', E: '#3f9b4f' }
+// Moodboard "Orbital Drift" palette: Nebula Cyan, Visor Gold, Ion, Solar.
+export const FUEL_COLOR: Record<Fuel, string> = { X: '#5CE1E6', Z: '#F2C14E', D: '#8C9CFF', E: '#FF8A3D' }
 
 const CAR_LENGTH = 4
 const RING_RADIUS = 3.7
@@ -29,12 +30,13 @@ const RING_SPAN = Math.PI * 1.7
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export type Part = 'body' | 'engine' | 'gearbox' | 'hybrid' | 'fuel' | 'exhaust'
+export type View = 'three-quarter' | 'side' | 'top' | 'engine' | 'rear' | 'under'
 
 export function smokeColor(co2: number): THREE.Color {
   const stops: [number, string][] = [
-    [150, '#7cc7a8'],
-    [250, '#e9c46a'],
-    [380, '#e07a3f'],
+    [150, '#6fe3a6'],
+    [250, '#F2C14E'],
+    [380, '#FF8A3D'],
   ]
   if (co2 <= stops[0][0]) return new THREE.Color(stops[0][1])
   for (let i = 1; i < stops.length; i++) {
@@ -83,12 +85,12 @@ class CarRig {
 
   constructor(withInternals: boolean) {
     this.root.add(this.shell)
-    this.block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), std('#5d6b72', { metalness: 0.4 }))
+    this.block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), std('#4a5878', { metalness: 0.4 }))
     this.engine.add(this.block, this.pistons)
-    this.battery = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), std('#1f3038', { emissive: '#35d0c5', emissiveIntensity: 0.9 }))
-    this.motor = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 6, 16), std('#1f3038', { emissive: '#35d0c5', emissiveIntensity: 1.2 }))
+    this.battery = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), std('#0D1424', { emissive: '#5CE1E6', emissiveIntensity: 0.9 }))
+    this.motor = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 6, 16), std('#0D1424', { emissive: '#5CE1E6', emissiveIntensity: 1.2 }))
     for (const side of [-1, 1]) {
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1), std('#0d7480', { emissive: '#0d7480', emissiveIntensity: 0.8 }))
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1), std('#5CE1E6', { emissive: '#5CE1E6', emissiveIntensity: 0.8 }))
       strip.userData.side = side
       this.strips.push(strip)
       this.root.add(strip)
@@ -181,7 +183,7 @@ class CarRig {
     if (c.TRANS_TYPE === 'M') {
       const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6), std('#1f3038'))
       stick.position.set(0, 0.25, -0.1)
-      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), std('#0d7480'))
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), std('#F2C14E'))
       knob.position.set(0, 0.48, -0.1)
       this.gearbox.add(stick, knob)
     }
@@ -259,6 +261,7 @@ export class Studio {
   private xrayLocked = false
   private opacity = 1
   private mode: 'single' | 'lineup' = 'single'
+  private follow = true
   private lastFrame = performance.now()
   private frame = 0
   private resizeObserver: ResizeObserver
@@ -288,7 +291,7 @@ export class Studio {
     this.labels.domElement.className = 'studio-labels'
     container.appendChild(this.labels.domElement)
 
-    this.scene.background = new THREE.Color('#e3eaed')
+    this.scene.background = new THREE.Color('#04070d')
     this.camera.position.set(7.5, 4.6, 8.5)
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.target.set(0, 0.7, 0)
@@ -367,7 +370,7 @@ export class Studio {
       this.flash(target)
       this.deltaLabel(target, changed.delta)
       if (['engine', 'gearbox', 'hybrid'].includes(changed.part)) this.xrayUntil = performance.now() + 2600
-      this.flyTo(changed.part)
+      if (this.follow) this.flyTo(changed.part)
     }
   }
 
@@ -413,6 +416,68 @@ export class Studio {
     this.xrayLocked = on
   }
 
+  setFollow(on: boolean) {
+    this.follow = on
+  }
+
+  setAutoRotate(on: boolean) {
+    this.controls.autoRotate = on
+    this.controls.autoRotateSpeed = 1.1
+  }
+
+  setView(view: View) {
+    const views: Record<View, [THREE.Vector3, THREE.Vector3]> = {
+      'three-quarter': [new THREE.Vector3(7.5, 4.6, 8.5), new THREE.Vector3(0, 0.7, 0)],
+      side: [new THREE.Vector3(10.5, 2.2, 0), new THREE.Vector3(0, 0.8, 0)],
+      top: [new THREE.Vector3(0.01, 13, 0.6), new THREE.Vector3(0, 0, 0)],
+      engine: [new THREE.Vector3(3.2, 4.2, 7.2), new THREE.Vector3(0, 0.9, 1.2)],
+      rear: [new THREE.Vector3(3.5, 3.2, -8.5), new THREE.Vector3(0, 0.6, -1.5)],
+      under: [new THREE.Vector3(6.5, 0.35, 4.5), new THREE.Vector3(0, 0.45, 0)],
+    }
+    const [position, target] = views[view]
+    this.moveCamera(position, target)
+  }
+
+  /** Small pixel sprites of each body for the body picker (rendered at low resolution, shown scaled up). */
+  thumbnails(width = 72, height = 44): Partial<Record<Body, string>> {
+    const out: Partial<Record<Body, string>> = {}
+    const scene = new THREE.Scene()
+    scene.add(new THREE.HemisphereLight('#ffffff', '#3a4a6a', 2.2))
+    const sun = new THREE.DirectionalLight('#ffffff', 2)
+    sun.position.set(4, 6, 5)
+    scene.add(sun)
+    const camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 50)
+    camera.position.set(5.6, 2.9, 6.1)
+    camera.lookAt(0, 0.75, 0)
+    const target = new THREE.WebGLRenderTarget(width, height)
+    target.texture.colorSpace = THREE.SRGBColorSpace
+    const pixels = new Uint8Array(width * height * 4)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')!
+    const prevClear = this.renderer.getClearAlpha()
+    this.renderer.setClearColor(0x000000, 0)
+    for (const body of BODIES) {
+      const car = this.templates.get(body)?.clone(true)
+      if (!car) continue
+      scene.add(car)
+      this.renderer.setRenderTarget(target)
+      this.renderer.clear()
+      this.renderer.render(scene, camera)
+      this.renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels)
+      const image = ctx.createImageData(width, height)
+      for (let y = 0; y < height; y++) image.data.set(pixels.subarray((height - 1 - y) * width * 4, (height - y) * width * 4), y * width * 4)
+      ctx.putImageData(image, 0, 0)
+      out[body] = canvas.toDataURL('image/png')
+      scene.remove(car)
+    }
+    this.renderer.setRenderTarget(null)
+    this.renderer.setClearColor(0x000000, prevClear)
+    target.dispose()
+    return out
+  }
+
   dispose() {
     cancelAnimationFrame(this.frame)
     this.resizeObserver.disconnect()
@@ -425,8 +490,11 @@ export class Studio {
   // ---- scene building ---------------------------------------------------
 
   private buildStage() {
-    const hemi = new THREE.HemisphereLight('#ffffff', '#b9c5ca', 1.6)
-    const sun = new THREE.DirectionalLight('#ffffff', 2.4)
+    const hemi = new THREE.HemisphereLight('#cfe0ff', '#1a2640', 1.5)
+    const sun = new THREE.DirectionalLight('#ffffff', 2.6)
+    const rim = new THREE.DirectionalLight('#5CE1E6', 0.8)
+    rim.position.set(-6, 4, -6)
+    this.scene.add(rim)
     sun.position.set(6, 10, 4)
     sun.castShadow = true
     sun.shadow.mapSize.set(1024, 1024)
@@ -435,13 +503,13 @@ export class Studio {
     cam.right = cam.top = 12
     this.scene.add(hemi, sun)
 
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48), std('#d7e0e4', { roughness: 1 }))
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48), std('#070c18', { roughness: 1 }))
     floor.rotation.x = -Math.PI / 2
     floor.receiveShadow = true
-    const platform = new THREE.Mesh(new THREE.CylinderGeometry(RING_RADIUS + 0.6, RING_RADIUS + 0.8, 0.12, 48), std('#ecf0f2', { roughness: 0.9 }))
+    const platform = new THREE.Mesh(new THREE.CylinderGeometry(RING_RADIUS + 0.6, RING_RADIUS + 0.8, 0.12, 48), std('#0c1528', { roughness: 0.9 }))
     platform.position.y = -0.06
     platform.receiveShadow = true
-    const grid = new THREE.GridHelper(40, 40, '#c6d1d6', '#c6d1d6')
+    const grid = new THREE.GridHelper(40, 40, '#1d3a66', '#13233f')
     grid.position.y = 0.001
     this.scene.add(floor, grid, platform)
   }
@@ -454,19 +522,19 @@ export class Studio {
   private buildRing() {
     const bins = 64
     const geo = new THREE.BoxGeometry(0.16, 1, 0.16)
-    this.ringBars = new THREE.InstancedMesh(geo, std('#9ea7ab'), bins)
+    this.ringBars = new THREE.InstancedMesh(geo, std('#2b56a8', { emissive: '#16305e', emissiveIntensity: 0.6 }), bins)
     this.ringBars.castShadow = true
     this.ring.add(this.ringBars)
 
     this.piBand = new THREE.Mesh(
       new THREE.RingGeometry(1, 1.1, 8),
-      new THREE.MeshBasicMaterial({ color: '#0d7480', transparent: true, opacity: 0.28, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: '#FF8A3D', transparent: true, opacity: 0.55, side: THREE.DoubleSide }),
     )
     this.piBand.rotation.x = -Math.PI / 2
     this.piBand.position.y = 0.012
     this.ring.add(this.piBand)
 
-    this.marker = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.9, 0.22), std('#e9c46a', { emissive: '#0d7480', emissiveIntensity: 0.15 }))
+    this.marker = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.9, 0.22), std('#F2C14E', { emissive: '#F2C14E', emissiveIntensity: 0.5 }))
     this.marker.castShadow = true
     this.ring.add(this.marker)
 
@@ -525,7 +593,7 @@ export class Studio {
       rig.root.rotation.y = -0.35
       rig.root.userData.body = body
       this.lineupGroup.add(rig.root)
-      const column = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1, 0.7), std('#e9c46a'))
+      const column = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1, 0.7), std('#F2C14E', { emissive: '#3a2a08', emissiveIntensity: 0.6 }))
       column.position.set(x + 1.1, 0, -2.6)
       column.castShadow = true
       this.columns.push(column)

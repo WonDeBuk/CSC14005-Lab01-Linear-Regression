@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { ExportedModel, Prediction } from '../model'
+import type { ExportedModel, ModelName, Prediction } from '../model'
 import { FACTOR_LABELS, fmt, signed } from '../model'
 
 export interface LogEntry {
@@ -8,65 +8,80 @@ export interface LogEntry {
   delta: number
 }
 
-export function Readout({ prediction, model }: { prediction: Prediction; model: ExportedModel }) {
-  const below = Math.round(prediction.percentile * 100)
+export function ResultCard(props: {
+  prediction: Prediction
+  model: ExportedModel
+  models: ModelName[]
+  onModel: (m: ModelName) => void
+}) {
+  const { prediction: p, model } = props
   return (
-    <section className="panel-block readout" aria-labelledby="readout-title" data-enter>
-      <h2 id="readout-title" className="eyebrow">
-        CO₂ dự đoán · {model.name}
-      </h2>
-      <p className="readout-value mono" aria-live="polite">
-        {fmt(prediction.mean)}
-        <span className="readout-unit">g/km</span>
-      </p>
-      <dl className="readout-grid">
-        <div>
-          <dt>Khoảng tin cậy 95%</dt>
-          <dd className="mono">
-            {fmt(prediction.ci[0])}–{fmt(prediction.ci[1])}
+    <section className="hud card" aria-labelledby="result-title">
+      <div className="card-head">
+        <h2 id="result-title" className="eyebrow">
+          Kết quả mô hình {model.name}
+        </h2>
+        <div className="seg-tabs" role="group" aria-label="Chọn mô hình">
+          {props.models.map((m) => (
+            <button key={m} type="button" className="tab mono" aria-pressed={m === model.name} onClick={() => props.onModel(m)}>
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+      <dl className="stats">
+        <div className="stat">
+          <dt>Trung bình mọi xe như vậy (95%)</dt>
+          <dd>
+            {fmt(p.ci[0], 1)} – {fmt(p.ci[1], 1)}
           </dd>
         </div>
-        <div>
-          <dt>Khoảng dự đoán 95%</dt>
-          <dd className="mono">
-            {fmt(prediction.pi[0])}–{fmt(prediction.pi[1])}
+        <div className="stat">
+          <dt>Một chiếc cụ thể (95%)</dt>
+          <dd>
+            {fmt(p.pi[0], 1)} – {fmt(p.pi[1], 1)}
           </dd>
         </div>
-        <div>
+        <div className="stat">
           <dt>Thải nhiều hơn</dt>
-          <dd className="mono">{below}% đội xe 2014</dd>
+          <dd>{Math.round(p.percentile * 100)}% đội xe 2014</dd>
         </div>
       </dl>
-      {prediction.extrapolating && (
-        <p className="warning" role="status">
-          Cấu hình này nằm xa dữ liệu huấn luyện (đòn bẩy {fmt(prediction.leverage, 3)} &gt; {fmt(model.leverage_limit, 3)}). Con
-          số là ngoại suy, nên đọc thận trọng.
+      {p.extrapolating && (
+        <p className="warn" role="status">
+          Cấu hình nằm xa dữ liệu huấn luyện (đòn bẩy {fmt(p.leverage, 3)} &gt; {fmt(model.leverage_limit, 3)}): con số là ngoại
+          suy.
         </p>
       )}
+      <p className="model-line mono">
+        {model.description} · R² test {fmt(model.metrics.R2, 3)} · RMSE test {fmt(model.metrics.RMSE, 1)} · RMSE CV{' '}
+        {fmt(model.metrics.CV_RMSE_mean, 1)} ± {fmt(model.metrics.CV_RMSE_std, 1)} g/km
+      </p>
     </section>
   )
 }
 
-export function Contributions({ prediction }: { prediction: Prediction }) {
-  const max = Math.max(...prediction.contributions.map((c) => Math.abs(c.value)), 1)
+export function WhyCard({ prediction }: { prediction: Prediction }) {
+  const rows = [...prediction.contributions].sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+  const max = Math.max(...rows.map((c) => Math.abs(c.value)), 1)
   return (
-    <section className="panel-block" aria-labelledby="contrib-title">
-      <h2 id="contrib-title">Đóng góp từng yếu tố</h2>
-      <p className="muted small">
-        Hệ số chặn {fmt(prediction.intercept, 1)} g/km cộng các phần dưới đây ra con số dự đoán. Mô hình cộng tính nên mỗi
-        phần đọc được riêng.
-      </p>
-      <ul className="bars">
-        {prediction.contributions.map((c) => (
-          <li key={c.factor} className="bar-row">
-            <span className="bar-label">{FACTOR_LABELS[c.factor]}</span>
-            <span className="bar-track" aria-hidden="true">
-              <span
-                className={`bar-fill ${c.value < 0 ? 'is-neg' : ''}`}
-                style={{ '--w': `${(Math.abs(c.value) / max) * 50}%` } as CSSProperties}
-              />
+    <section className="hud card" aria-labelledby="why-title">
+      <h2 id="why-title" className="eyebrow">
+        Vì sao ra con số này
+      </h2>
+      <ul className="why">
+        <li>
+          <span>Hệ số chặn</span>
+          <span className="why-track" aria-hidden="true" />
+          <span className="mono">{fmt(prediction.intercept, 1)}</span>
+        </li>
+        {rows.map((c) => (
+          <li key={c.factor}>
+            <span>{FACTOR_LABELS[c.factor]}</span>
+            <span className="why-track" aria-hidden="true">
+              <span className={`why-fill ${c.value < 0 ? 'neg' : 'pos'}`} style={{ '--w': `${(Math.abs(c.value) / max) * 50}%` } as CSSProperties} />
             </span>
-            <span className="bar-value mono">{signed(c.value)}</span>
+            <span className={`mono ${c.value < 0 ? 'down' : c.value > 0 ? 'up' : ''}`}>{signed(c.value)}</span>
           </li>
         ))}
       </ul>
@@ -74,18 +89,20 @@ export function Contributions({ prediction }: { prediction: Prediction }) {
   )
 }
 
-export function ChangeLog({ entries }: { entries: LogEntry[] }) {
+export function LogCard({ entries }: { entries: LogEntry[] }) {
   return (
-    <section className="panel-block" aria-labelledby="log-title">
-      <h2 id="log-title">Nhật ký thay đổi</h2>
+    <section className="hud card" aria-labelledby="log-title">
+      <h2 id="log-title" className="eyebrow">
+        Nhật ký thay đổi
+      </h2>
       {entries.length === 0 ? (
-        <p className="muted small">Đổi một thông số để xem CO₂ tăng hay giảm bao nhiêu gam.</p>
+        <p className="muted">Chỉnh một thông số: mô hình 3D đổi theo, camera tới đúng bộ phận, và dòng nhật ký ghi lại CO₂ tăng hay giảm bao nhiêu.</p>
       ) : (
         <ol className="log">
           {entries.map((e) => (
             <li key={e.id}>
               <span>{e.text}</span>
-              <span className={`mono ${e.delta > 0 ? 'is-up' : 'is-down'}`}>{signed(e.delta)} g/km</span>
+              <span className={`mono ${e.delta > 0 ? 'up' : 'down'}`}>{signed(e.delta)} g/km</span>
             </li>
           ))}
         </ol>

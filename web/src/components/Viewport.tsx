@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Body, Config, Prediction } from '../model'
-import { Studio, type Part } from '../scene/Studio'
+import { Studio, type Part, type View } from '../scene/Studio'
 
 export interface Change {
   id: number
   part: Part
   delta: number
+}
+
+export interface ViewRequest {
+  id: number
+  view: View
 }
 
 interface Props {
@@ -14,26 +19,31 @@ interface Props {
   fleet: number[]
   change: Change | null
   mode: 'single' | 'lineup'
-  pixelSize: number
   xray: boolean
+  pixelSize: number
+  follow: boolean
+  autoRotate: boolean
+  view: ViewRequest | null
   lineup: { configs: Config[]; co2: number[] }
   onSelectBody: (body: Body) => void
+  onThumbnails: (thumbs: Partial<Record<Body, string>>) => void
 }
 
 export function Viewport(props: Props) {
   const host = useRef<HTMLDivElement>(null)
   const studio = useRef<Studio | null>(null)
   const lastChange = useRef(0)
+  const lastView = useRef(0)
   const [state, setState] = useState<'loading' | 'ready' | 'nogl' | 'error'>(() => (Studio.supported() ? 'loading' : 'nogl'))
-  const selectBody = useRef(props.onSelectBody)
-  selectBody.current = props.onSelectBody
+  const callbacks = useRef({ select: props.onSelectBody, thumbs: props.onThumbnails })
+  callbacks.current = { select: props.onSelectBody, thumbs: props.onThumbnails }
 
   useEffect(() => {
     if (!host.current || state === 'nogl') return
     let cancelled = false
     let instance: Studio
     try {
-      instance = new Studio(host.current, { onSelectBody: (b) => selectBody.current(b) })
+      instance = new Studio(host.current, { onSelectBody: (b) => callbacks.current.select(b) })
     } catch {
       setState('nogl')
       return
@@ -44,6 +54,7 @@ export function Viewport(props: Props) {
       .then(() => {
         if (cancelled) return
         studio.current = instance
+        callbacks.current.thumbs(instance.thumbnails())
         setState('ready')
       })
       .catch(() => !cancelled && setState('error'))
@@ -66,19 +77,27 @@ export function Viewport(props: Props) {
     s.updateLineup(props.lineup.configs, props.lineup.co2, props.config.BODY)
   }, [state, props.config, props.prediction, props.change, props.lineup])
 
+  useEffect(() => {
+    if (studio.current && props.view && props.view.id !== lastView.current) {
+      lastView.current = props.view.id
+      studio.current.setView(props.view.view)
+    }
+  }, [state, props.view])
   useEffect(() => studio.current?.setMode(props.mode), [state, props.mode])
-  useEffect(() => studio.current?.setPixelSize(props.pixelSize), [state, props.pixelSize])
   useEffect(() => studio.current?.setXray(props.xray), [state, props.xray])
+  useEffect(() => studio.current?.setPixelSize(props.pixelSize), [state, props.pixelSize])
+  useEffect(() => studio.current?.setFollow(props.follow), [state, props.follow])
+  useEffect(() => studio.current?.setAutoRotate(props.autoRotate), [state, props.autoRotate])
 
   return (
-    <div className="viewport" aria-label="Xưởng xe 3D: mô hình xe thay đổi theo thông số" role="img">
+    <div className="viewport" role="img" aria-label="Xưởng xe 3D: mô hình xe thay đổi theo thông số">
       <div ref={host} className="viewport-canvas" />
-      {state === 'loading' && <p className="viewport-note">Đang nạp mẫu xe…</p>}
+      {state === 'loading' && <p className="viewport-note mono">Đang nạp mẫu xe…</p>}
       {state === 'error' && <p className="viewport-note">Không nạp được mẫu xe. Tải lại trang để thử lại.</p>}
       {state === 'nogl' && (
         <p className="viewport-note">
-          Trình duyệt này không bật WebGL nên không vẽ được xưởng 3D. Mọi con số bên phải vẫn tính đúng; bật tăng tốc phần
-          cứng để xem mô hình xe.
+          Trình duyệt này không bật WebGL nên không vẽ được xưởng 3D. Mọi con số vẫn tính đúng; bật tăng tốc phần cứng để xem
+          mô hình xe.
         </p>
       )}
     </div>

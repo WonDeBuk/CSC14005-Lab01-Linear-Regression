@@ -1,161 +1,158 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Body, Config, Fuel, ModelBundle, Trans } from '../model'
 import { fmt } from '../model'
+import { FUEL_COLOR } from '../scene/Studio'
 
 interface Props {
   config: Config
   bundle: ModelBundle
+  thumbs: Partial<Record<Body, string>>
   onChange: <K extends keyof Config>(key: K, value: Config[K]) => void
-  onReset: () => void
+  onPreset: (preset: Config) => void
 }
 
 const BODIES: Body[] = ['small', 'midlarge', 'suv', 'pickup', 'van']
+const BODY_SHORT: Record<Body, string> = { small: 'Xe nhỏ', midlarge: 'Sedan', suv: 'SUV', pickup: 'Bán tải', van: 'Van' }
 const FUELS: Fuel[] = ['X', 'Z', 'D', 'E']
 const TRANS: Trans[] = ['A', 'AS', 'AM', 'AV', 'M']
-const BODY_SHORT: Record<Body, string> = { small: 'Xe nhỏ', midlarge: 'Sedan', suv: 'SUV', pickup: 'Bán tải', van: 'Van' }
+const CYLINDERS = [3, 4, 5, 6, 8, 10, 12]
+const GEARS = [0, 4, 5, 6, 7, 8, 9]
 
-function Segmented<T extends string>(props: {
-  legend: string
-  options: T[]
-  value: T
-  label: (v: T) => string
-  short?: (v: T) => string
-  onPick: (v: T) => void
-}) {
+const PRESETS: { label: string; config: Config }[] = [
+  { label: 'Xe nhỏ 2.0L', config: { BODY: 'small', ENGINESIZE: 2.0, CYLINDERS: 4, FUELTYPE: 'X', TRANS_TYPE: 'AS', GEARS: 6, HYBRID: 0 } },
+  { label: 'SUV 3.5L', config: { BODY: 'suv', ENGINESIZE: 3.5, CYLINDERS: 6, FUELTYPE: 'X', TRANS_TYPE: 'AS', GEARS: 6, HYBRID: 0 } },
+  { label: 'SUV 3.5L E85', config: { BODY: 'suv', ENGINESIZE: 3.5, CYLINDERS: 6, FUELTYPE: 'E', TRANS_TYPE: 'AS', GEARS: 6, HYBRID: 0 } },
+  { label: 'Sedan hybrid', config: { BODY: 'midlarge', ENGINESIZE: 2.5, CYLINDERS: 4, FUELTYPE: 'X', TRANS_TYPE: 'AV', GEARS: 0, HYBRID: 1 } },
+  { label: 'Bán tải V8 5.3L', config: { BODY: 'pickup', ENGINESIZE: 5.3, CYLINDERS: 8, FUELTYPE: 'X', TRANS_TYPE: 'A', GEARS: 6, HYBRID: 0 } },
+]
+
+function Group(props: { label: string; hint: string; children: ReactNode }) {
   return (
-    <fieldset className="field">
-      <legend className="field-label">{props.legend}</legend>
-      <div className="segmented" style={{ '--n': props.options.length } as CSSProperties}>
-        {props.options.map((o) => (
-          <button
-            key={o}
-            type="button"
-            className="seg"
-            aria-pressed={o === props.value}
-            title={props.label(o)}
-            onClick={() => props.onPick(o)}
-          >
-            {props.short ? props.short(o) : props.label(o)}
-          </button>
-        ))}
-      </div>
+    <fieldset className="group">
+      <legend className="group-label">
+        <span>{props.label}</span>
+        {props.hint && <span className="group-hint mono">{props.hint}</span>}
+      </legend>
+      {props.children}
     </fieldset>
   )
 }
 
-function Slider(props: {
-  id: string
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  display: string
-  onInput: (v: number) => void
-}) {
-  return (
-    <div className="field">
-      <div className="field-row">
-        <label className="field-label" htmlFor={props.id}>
-          {props.label}
-        </label>
-        <output className="mono" htmlFor={props.id}>
-          {props.display}
-        </output>
-      </div>
-      <input
-        id={props.id}
-        type="range"
-        min={props.min}
-        max={props.max}
-        step={props.step}
-        value={props.value}
-        style={{ '--fill': `${((props.value - props.min) / (props.max - props.min)) * 100}%` } as CSSProperties}
-        onChange={(e) => props.onInput(Number(e.target.value))}
-      />
-    </div>
-  )
-}
-
-export function Controls({ config, bundle, onChange, onReset }: Props) {
+export function Controls({ config, bundle, thumbs, onChange, onPreset }: Props) {
   const { labels, ranges } = bundle
-  const cvt = config.TRANS_TYPE === 'AV'
+  const [lo, hi] = ranges.ENGINESIZE
   return (
-    <section className="panel-block" aria-labelledby="controls-title">
-      <div className="block-head">
-        <h2 id="controls-title">Thông số thiết kế</h2>
-        <button type="button" className="btn btn-ghost" onClick={onReset}>
-          Đặt lại theo nhóm xe
-        </button>
+    <section className="hud panel" aria-labelledby="controls-title">
+      <h2 id="controls-title" className="eyebrow">
+        Thông số thiết kế
+      </h2>
+
+      <Group label="Nhóm thân xe" hint="hình dáng · cỡ bánh · gầm">
+        <div className="bodies">
+          {BODIES.map((b) => (
+            <button key={b} type="button" className="body-btn" aria-pressed={config.BODY === b} title={labels.BODY[b]} onClick={() => onChange('BODY', b)}>
+              {thumbs[b] ? <img src={thumbs[b]} alt="" /> : <span className="body-ph" aria-hidden="true" />}
+              <span className="mono">{BODY_SHORT[b]}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <div className="group">
+        <label className="group-label" htmlFor="engine">
+          <span>Dung tích động cơ</span>
+          <span className="group-value">{fmt(config.ENGINESIZE, 1)} L</span>
+        </label>
+        <span className="group-hint mono">khối máy · ống xả</span>
+        <input
+          id="engine"
+          type="range"
+          min={lo}
+          max={hi}
+          step={0.1}
+          value={config.ENGINESIZE}
+          style={{ '--fill': `${((config.ENGINESIZE - lo) / (hi - lo)) * 100}%` } as CSSProperties}
+          onChange={(e) => onChange('ENGINESIZE', Number(e.target.value))}
+        />
+        <div className="ticks mono" aria-hidden="true">
+          <span>{fmt(lo, 1)}</span>
+          <span>{fmt((lo + hi) / 2, 1)}</span>
+          <span>{fmt(hi, 1)}</span>
+        </div>
       </div>
-      <Segmented
-        legend="Nhóm thân xe"
-        options={BODIES}
-        value={config.BODY}
-        label={(v) => labels.BODY[v]}
-        short={(v) => BODY_SHORT[v]}
-        onPick={(v) => onChange('BODY', v)}
-      />
-      <Slider
-        id="engine"
-        label="Dung tích động cơ"
-        value={config.ENGINESIZE}
-        min={ranges.ENGINESIZE[0]}
-        max={ranges.ENGINESIZE[1]}
-        step={0.1}
-        display={`${fmt(config.ENGINESIZE, 1)} L`}
-        onInput={(v) => onChange('ENGINESIZE', v)}
-      />
-      <Slider
-        id="cylinders"
-        label="Số xi-lanh"
-        value={config.CYLINDERS}
-        min={ranges.CYLINDERS[0]}
-        max={ranges.CYLINDERS[1]}
-        step={1}
-        display={`${config.CYLINDERS}`}
-        onInput={(v) => onChange('CYLINDERS', v)}
-      />
-      <Segmented
-        legend="Nhiên liệu"
-        options={FUELS}
-        value={config.FUELTYPE}
-        label={(v) => labels.FUELTYPE[v]}
-        onPick={(v) => onChange('FUELTYPE', v)}
-      />
-      <Segmented
-        legend="Kiểu hộp số"
-        options={TRANS}
-        value={config.TRANS_TYPE}
-        label={(v) => labels.TRANS_TYPE[v]}
-        short={(v) => v}
-        onPick={(v) => onChange('TRANS_TYPE', v)}
-      />
-      <Slider
-        id="gears"
-        label={cvt ? 'Số cấp (0 = vô cấp, không ghi số cấp)' : 'Số cấp hộp số'}
-        value={config.GEARS}
-        min={cvt ? 0 : 4}
-        max={ranges.GEARS[1]}
-        step={1}
-        display={config.GEARS === 0 ? 'CVT' : `${config.GEARS} cấp`}
-        onInput={(v) => onChange('GEARS', v)}
-      />
-      <div className="field field-row">
-        <span className="field-label" id="hybrid-label">
-          Công nghệ hybrid
-        </span>
+
+      <Group label="Số xi-lanh" hint="thẳng hàng ≤ 5, chữ V ≥ 6">
+        <div className="grid-btns" style={{ '--n': CYLINDERS.length } as CSSProperties}>
+          {CYLINDERS.map((n) => (
+            <button key={n} type="button" className="opt mono" aria-pressed={config.CYLINDERS === n} onClick={() => onChange('CYLINDERS', n)}>
+              {n}
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group label="Nhiên liệu" hint="màu dải đèn, piston">
+        <div className="fuels">
+          {FUELS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className="opt fuel"
+              aria-pressed={config.FUELTYPE === f}
+              style={{ '--dot': FUEL_COLOR[f] } as CSSProperties}
+              onClick={() => onChange('FUELTYPE', f)}
+            >
+              <span className="dot" aria-hidden="true" />
+              <span className="fuel-name">{labels.FUELTYPE[f]}</span>
+              <span className="mono fuel-code">{f}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group label="Kiểu hộp số" hint="bánh răng · puli CVT · cần số sàn">
+        <div className="grid-btns" style={{ '--n': TRANS.length } as CSSProperties}>
+          {TRANS.map((t) => (
+            <button key={t} type="button" className="opt mono" aria-pressed={config.TRANS_TYPE === t} title={labels.TRANS_TYPE[t]} onClick={() => onChange('TRANS_TYPE', t)}>
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="grid-btns gears" role="group" aria-label="Số cấp">
+          {GEARS.map((g) => (
+            <button key={g} type="button" className="opt mono" aria-pressed={config.GEARS === g} onClick={() => onChange('GEARS', g)}>
+              {g === 0 ? 'Không ghi' : `${g} cấp`}
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <div className="group hybrid-row">
         <button
           type="button"
           role="switch"
-          className="switch"
+          className="square-switch"
           aria-checked={config.HYBRID === 1}
           aria-labelledby="hybrid-label"
           onClick={() => onChange('HYBRID', config.HYBRID ? 0 : 1)}
         >
-          <span className="switch-knob" />
+          <span aria-hidden="true" />
         </button>
+        <span id="hybrid-label" className="group-label">
+          <span>Hybrid</span>
+          <span className="group-hint mono">pin dưới sàn + mô-tơ</span>
+        </span>
       </div>
+
+      <Group label="Thử nhanh" hint="">
+        <div className="presets">
+          {PRESETS.map((p) => (
+            <button key={p.label} type="button" className="opt mono" onClick={() => onPreset(p.config)}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </Group>
     </section>
   )
 }

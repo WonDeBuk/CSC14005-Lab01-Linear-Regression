@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controls } from './components/Controls'
-import { ChangeLog, Contributions, Readout, type LogEntry } from './components/Readout'
-import { Viewport, type Change } from './components/Viewport'
+import { LogCard, ResultCard, WhyCard, type LogEntry } from './components/Readout'
+import { Viewport, type Change, type ViewRequest } from './components/Viewport'
 import type { Body, Config, ModelBundle, ModelName } from './model'
 import { defaultConfig, fmt, predict } from './model'
-import type { Part } from './scene/Studio'
-import { BODIES } from './scene/Studio'
+import type { Part, View } from './scene/Studio'
+import { BODIES, smokeColor } from './scene/Studio'
 
 const REPO = 'https://github.com/WonDeBuk/CSC14005-Lab01-Linear-Regression'
 const PART_OF: Record<keyof Config, Part> = {
@@ -17,7 +17,16 @@ const PART_OF: Record<keyof Config, Part> = {
   HYBRID: 'hybrid',
   FUELTYPE: 'fuel',
 }
-const PIXEL_SIZES = [1, 3, 4, 6]
+const PIXEL_SIZES = [1, 3, 4, 6, 8]
+const VIEWS: { id: View; label: string }[] = [
+  { id: 'three-quarter', label: '3/4' },
+  { id: 'side', label: 'Hông' },
+  { id: 'top', label: 'Trên' },
+  { id: 'engine', label: 'Khoang máy' },
+  { id: 'rear', label: 'Đuôi + khí xả' },
+  { id: 'under', label: 'Gầm' },
+]
+type Tab = 'studio' | 'xray' | 'lineup'
 
 export default function App() {
   const [bundle, setBundle] = useState<ModelBundle | null>(null)
@@ -49,7 +58,7 @@ function describe(bundle: ModelBundle, key: keyof Config, from: Config, to: Conf
     case 'CYLINDERS':
       return `Xi-lanh: ${from.CYLINDERS} → ${to.CYLINDERS}`
     case 'GEARS':
-      return `Số cấp: ${from.GEARS || 'CVT'} → ${to.GEARS || 'CVT'}`
+      return `Số cấp: ${from.GEARS || 'không ghi'} → ${to.GEARS || 'không ghi'}`
     case 'HYBRID':
       return to.HYBRID ? 'Bật hybrid' : 'Tắt hybrid'
   }
@@ -58,9 +67,12 @@ function describe(bundle: ModelBundle, key: keyof Config, from: Config, to: Conf
 function Workshop({ bundle }: { bundle: ModelBundle }) {
   const [modelName, setModelName] = useState<ModelName>('M8b')
   const [config, setConfig] = useState<Config>(() => defaultConfig(bundle))
-  const [mode, setMode] = useState<'single' | 'lineup'>('single')
+  const [tab, setTab] = useState<Tab>('studio')
   const [pixelSize, setPixelSize] = useState(4)
-  const [xray, setXray] = useState(false)
+  const [follow, setFollow] = useState(true)
+  const [autoRotate, setAutoRotate] = useState(false)
+  const [view, setView] = useState<ViewRequest | null>(null)
+  const [thumbs, setThumbs] = useState<Partial<Record<Body, string>>>({})
   const [change, setChange] = useState<Change | null>(null)
   const [log, setLog] = useState<LogEntry[]>([])
   const counter = useRef(0)
@@ -73,15 +85,14 @@ function Workshop({ bundle }: { bundle: ModelBundle }) {
   }, [model, bundle.fleet, config])
 
   const apply = useCallback(
-    (next: Config, key: keyof Config) => {
-      const before = predict(model, bundle.fleet, config).mean
-      const after = predict(model, bundle.fleet, next).mean
+    (next: Config, part: Part, text: string) => {
+      const delta = predict(model, bundle.fleet, next).mean - predict(model, bundle.fleet, config).mean
       const id = ++counter.current
       setConfig(next)
-      setChange({ id, part: PART_OF[key], delta: after - before })
-      setLog((l) => [{ id, text: describe(bundle, key, config, next), delta: after - before }, ...l].slice(0, 6))
+      setChange({ id, part, delta })
+      setLog((l) => [{ id, text, delta }, ...l].slice(0, 7))
     },
-    [bundle, config, model],
+    [bundle.fleet, config, model],
   )
 
   const onChange = useCallback(
@@ -90,16 +101,16 @@ function Workshop({ bundle }: { bundle: ModelBundle }) {
       const next = { ...config, [key]: value }
       // A CVT has no fixed gear count in the data; leaving CVT restores a typical 6 gears.
       if (key === 'TRANS_TYPE') next.GEARS = value === 'AV' ? 0 : config.GEARS === 0 ? 6 : config.GEARS
-      apply(next, key)
+      apply(next, PART_OF[key], describe(bundle, key, config, next))
     },
-    [apply, config],
+    [apply, bundle, config],
   )
 
-  const onReset = useCallback(() => {
-    apply({ ...config, ...bundle.presets[config.BODY] }, 'ENGINESIZE')
-  }, [apply, bundle.presets, config])
-
+  const onPreset = useCallback((preset: Config) => apply(preset, 'body', `Thử nhanh: ${bundle.labels.BODY[preset.BODY]}, ${fmt(preset.ENGINESIZE, 1)} L`), [apply, bundle])
   const onSelectBody = useCallback((body: Body) => onChange('BODY', body), [onChange])
+  const requestView = (v: View) => setView({ id: ++counter.current, view: v })
+
+  const co2Color = `#${smokeColor(prediction.mean).getHexString()}`
 
   return (
     <div className="app">
@@ -107,100 +118,118 @@ function Workshop({ bundle }: { bundle: ModelBundle }) {
         Bỏ qua tới bảng thông số
       </a>
       <header className="topbar">
-        <a className="wordmark" href="./" aria-label="CO₂ Studio, trang chủ">
-          <span className="wordmark-mark" aria-hidden="true">
-            CO₂
-          </span>
-          Studio
+        <a className="brand" href="./">
+          <span className="brand-dot" aria-hidden="true" />
+          CO₂ Studio
         </a>
-        <p className="topbar-meta mono">Lab 01 · Hồi quy tuyến tính · 1.067 xe Canada 2014</p>
-        <nav className="topbar-nav" aria-label="Liên kết">
-          <a className="link" href={REPO}>
-            Mã nguồn
-          </a>
-          <a className="link" href={`${REPO}/blob/main/data/README.md`}>
-            Dữ liệu
-          </a>
+        <nav aria-label="Liên kết" className="topnav mono">
+          <a href={REPO}>Mã nguồn</a>
+          <a href={`${REPO}/blob/main/data/README.md`}>Dữ liệu</a>
+          <a href={`${REPO}/blob/main/docs/decisions.md`}>Quyết định</a>
         </nav>
       </header>
 
-      <main className="workspace">
-        <div className="stage">
-          <h1 className="stage-title">Ước tính CO₂ của xe từ thông số thiết kế</h1>
-          <div className="toolbar" role="toolbar" aria-label="Chế độ xem">
-            <div className="chip-group" role="group" aria-label="Chế độ">
-              <button type="button" className="chip" aria-pressed={mode === 'single'} onClick={() => setMode('single')}>
-                Một xe
-              </button>
-              <button type="button" className="chip" aria-pressed={mode === 'lineup'} onClick={() => setMode('lineup')}>
-                Đội hình 5 xe
-              </button>
-            </div>
-            <div className="chip-group" role="group" aria-label="Cỡ điểm ảnh">
-              {PIXEL_SIZES.map((p) => (
-                <button key={p} type="button" className="chip" aria-pressed={pixelSize === p} onClick={() => setPixelSize(p)}>
-                  {p === 1 ? 'Tắt pixel' : `${p} px`}
-                </button>
-              ))}
-            </div>
-            <button type="button" className="chip" aria-pressed={xray} onClick={() => setXray((x) => !x)}>
-              Nhìn xuyên thân xe
-            </button>
-          </div>
+      <main className="page">
+        <header className="intro" data-enter>
+          <p className="eyebrow">
+            <span className="accent-orange">Lab 01</span> · Hồi quy tuyến tính · Khoa CNTT · HCMUS
+          </p>
+          <h1>
+            Xưởng xe 3D: mỗi thông số là một bộ phận, <span className="accent-cyan">khói xả là CO₂</span>
+          </h1>
+          <p className="lede">
+            Mô hình {model.name} học từ 1.067 xe hạng nhẹ Canada năm 2014 và tính lượng CO₂ (g/km) ngay trên trình duyệt. Đổi
+            một thông số: bộ phận đó sáng lên, camera bay tới, nhãn nổi báo CO₂ tăng hay giảm bao nhiêu gam. Dưới sàn là cả đội
+            xe 2014 cuộn thành vòng đo, dải cam là khoảng dự đoán 95%.
+          </p>
+        </header>
 
-          <Viewport
-            config={config}
-            prediction={prediction}
-            fleet={bundle.fleet}
-            change={change}
-            mode={mode}
-            pixelSize={pixelSize}
-            xray={xray}
-            lineup={lineup}
-            onSelectBody={onSelectBody}
-          />
+        <div className="workshop">
+          <Controls config={config} bundle={bundle} thumbs={thumbs} onChange={onChange} onPreset={onPreset} />
 
-          <div className="model-strip">
-            <div className="chip-group" role="group" aria-label="Mô hình">
-              {(Object.keys(bundle.models) as ModelName[]).map((name) => (
-                <button key={name} type="button" className="chip" aria-pressed={name === modelName} onClick={() => setModelName(name)}>
-                  {name}
-                </button>
-              ))}
+          <div className="hud stage">
+            <Viewport
+              config={config}
+              prediction={prediction}
+              fleet={bundle.fleet}
+              change={change}
+              mode={tab === 'lineup' ? 'lineup' : 'single'}
+              xray={tab === 'xray'}
+              pixelSize={pixelSize}
+              follow={follow}
+              autoRotate={autoRotate}
+              view={view}
+              lineup={lineup}
+              onSelectBody={onSelectBody}
+              onThumbnails={setThumbs}
+            />
+
+            <div className="stage-top">
+              <div className="readout" aria-live="polite">
+                <p className="readout-value" style={{ color: co2Color }}>
+                  {fmt(prediction.mean, 1)}
+                  <span className="readout-unit">g/km CO₂</span>
+                </p>
+                <p className="readout-sub mono">
+                  Một chiếc cụ thể: {fmt(prediction.pi[0], 1)} – {fmt(prediction.pi[1], 1)} · nhiều hơn{' '}
+                  {Math.round(prediction.percentile * 100)}% đội xe
+                </p>
+              </div>
+              <div className="seg-tabs" role="group" aria-label="Chế độ xem">
+                {(
+                  [
+                    ['studio', 'Studio'],
+                    ['xray', 'X-ray'],
+                    ['lineup', 'Đội hình 5 xe'],
+                  ] as [Tab, string][]
+                ).map(([id, label]) => (
+                  <button key={id} type="button" className="tab" aria-pressed={tab === id} onClick={() => setTab(id)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="model-desc">{model.description}</p>
-            <dl className="model-metrics mono">
-              <div>
-                <dt>R² test</dt>
-                <dd>{fmt(model.metrics.R2, 3)}</dd>
+
+            <div className="stage-bottom">
+              <div className="chips" role="group" aria-label="Góc camera">
+                {VIEWS.map((v) => (
+                  <button key={v.id} type="button" className="chip" onClick={() => requestView(v.id)} disabled={tab === 'lineup'}>
+                    {v.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <dt>RMSE test</dt>
-                <dd>{fmt(model.metrics.RMSE, 1)}</dd>
+              <div className="stage-options">
+                <div className="seg-tabs pixel" role="group" aria-label="Cỡ điểm ảnh">
+                  <span className="seg-label mono">Pixel</span>
+                  {PIXEL_SIZES.map((p) => (
+                    <button key={p} type="button" className="tab mono" aria-pressed={pixelSize === p} onClick={() => setPixelSize(p)}>
+                      {p === 1 ? 'Tắt' : `${p}px`}
+                    </button>
+                  ))}
+                </div>
+                <label className="check mono">
+                  <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
+                  Camera tự theo bộ phận
+                </label>
+                <label className="check mono">
+                  <input type="checkbox" checked={autoRotate} onChange={(e) => setAutoRotate(e.target.checked)} />
+                  Tự xoay
+                </label>
               </div>
-              <div>
-                <dt>RMSE CV 10-fold</dt>
-                <dd>
-                  {fmt(model.metrics.CV_RMSE_mean, 1)} ± {fmt(model.metrics.CV_RMSE_std, 1)}
-                </dd>
-              </div>
-            </dl>
+            </div>
           </div>
         </div>
 
-        <aside className="panel" aria-label="Bảng điều khiển">
-          <Readout prediction={prediction} model={model} />
-          <Controls config={config} bundle={bundle} onChange={onChange} onReset={onReset} />
-          <Contributions prediction={prediction} />
-          <ChangeLog entries={log} />
-        </aside>
+        <div className="cards">
+          <ResultCard prediction={prediction} model={model} models={Object.keys(bundle.models) as ModelName[]} onModel={setModelName} />
+          <WhyCard prediction={prediction} />
+          <LogCard entries={log} />
+        </div>
       </main>
 
-      <footer className="footer">
-        <p>
-          Mẫu xe: Kenney Car Kit (CC0) · Dữ liệu: Natural Resources Canada, Fuel Consumption Ratings 2014 · Nhóm CSC14005,
-          Khoa CNTT, ĐH Khoa học Tự nhiên, ĐHQG-HCM
-        </p>
+      <footer className="footer mono">
+        Mission LR-01 · Nhóm 24127020 · 24127039 · 24127183 · 24127500 · 24127508 · GVHD: Thầy Bùi Tiến Lên, Thầy Võ Nhật Tân ·
+        Khoa CNTT, HCMUS · Mẫu xe: Kenney Car Kit (CC0) · Dữ liệu: Natural Resources Canada, Fuel Consumption Ratings 2014
       </footer>
     </div>
   )

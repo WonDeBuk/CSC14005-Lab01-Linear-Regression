@@ -21,7 +21,7 @@ Tổng hợp từ moodboard của nhóm ("Mission LR-01", [artifact](https://cla
 | So sánh CV | t-test hiệu chỉnh Nadeau–Bengio | 10.2 |
 | Mô hình phi tuyến | Gaussian Process chỉ là mốc trần, không tính vào số mô hình | 12 |
 | Khung báo cáo | 8 chương, khoảng 19 trang (đã đưa vào `main.tex`) | 16 |
-| Ứng dụng | CO₂ Studio (React + three.js, xưởng xe pixel), mô hình chạy trên trình duyệt; bỏ bản Streamlit | 14 |
+| Ứng dụng | CO₂ Studio (React + three.js, xưởng xe pixel), mô hình chạy trên trình duyệt; bỏ bản Streamlit. Giao diện theo phong cách "Orbital Drift" của moodboard (nền vũ trụ tối, panel HUD, Space Grotesk, Be Vietnam Pro, JetBrains Mono) | 01, 14 |
 | Hosting | S3 + CloudFront, viết bằng Terraform; không dùng EC2 hay Lambda vì không có phần máy chủ | — |
 
 ## Việc còn mở
