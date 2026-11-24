@@ -1,0 +1,13 @@
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{4.3cm} r r r r@{}}
+\toprule
+Cặp mô hình & Thay đổi & $F$ ($p$) & $\overline{\Delta\text{RMSE}}$ & $p$ (NB) & $p$ (Wilcox.) \\
+\midrule
+M1 $\to$ M2 & Thêm số xi-lanh & 33,25 (< 0,001) & −0,53 & 0,086 & 0,037 \\
+M2 $\to$ M3 & Thêm nhiên liệu, thân xe, hộp số & 38,73 (< 0,001) & −5,82 & < 0,001 & 0,002 \\
+M3 $\to$ M3h & Thêm cờ hybrid (đã sửa nhãn) & 95,85 (< 0,001) & −1,25 & 0,033 & 0,004 \\
+M3 $\to$ M4 & Thêm dung tích$^2$, dung tích $\times$ (D, E85) & 1,41 (0,238) & 0,00 & 0,925 & 1,000 \\
+M4 $\to$ M5 & Chính quy hóa Ridge ($\lambda$ = 3) & -- & 0,00 & 0,967 & 0,846 \\
+M4 $\to$ M4log & Biến đổi log(\COtwo{}) + Duan & -- & −0,04 & 0,877 & 1,000 \\
+M3h $\to$ M8b & Thêm dung tích $\times$ (bán tải, van, hybrid) & 26,04 (< 0,001) & −0,95 & 0,136 & 0,049 \\
+\bottomrule
+\end{tabular}

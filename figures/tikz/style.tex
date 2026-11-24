@@ -1,0 +1,74 @@
+% Shared pgfplots style for every report chart (figures/tikz/fig*.tex).
+% Data comes from figures/data/, written by analysis/plot_data.py.
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots,fillbetween,statistics}
+\input{figures/data/plotvals.tex}
+
+\definecolor{cnavy}{HTML}{1B4965}
+\definecolor{cblue}{HTML}{2E75B6}
+\definecolor{cteal}{HTML}{2A9D8F}
+\definecolor{cterra}{HTML}{C85A32}
+\definecolor{camber}{HTML}{D48806}
+\definecolor{ccrimson}{HTML}{B91C1C}
+\definecolor{cink}{HTML}{1E293B}
+\definecolor{cmuted}{HTML}{64748B}
+\definecolor{csubtle}{HTML}{94A3B8}
+\definecolor{cgrid}{HTML}{E2E8F0}
+
+\newcommand{\figdata}[1]{figures/data/#1.dat}
+
+\pgfplotsset{
+  rpt/.style={
+    font=\footnotesize,
+    title style={font=\footnotesize\bfseries, yshift=-0.5ex},
+    label style={font=\footnotesize},
+    tick label style={font=\scriptsize},
+    axis line style={csubtle},
+    tick style={csubtle},
+    major tick length=2pt,
+    grid=major,
+    major grid style={cgrid, line width=0.4pt},
+    legend style={font=\scriptsize, draw=csubtle!60, fill=white, fill opacity=0.9,
+                  text opacity=1, inner sep=1.5pt, row sep=-1pt},
+    legend cell align=left,
+    /pgf/number format/use comma, /pgf/number format/1000 sep={.},
+  },
+  % Panel sizes for one-row layouts at \textwidth.
+  half/.style={width=0.48\textwidth, height=4.4cm},
+  third/.style={width=0.33\textwidth, height=4.6cm},
+  full/.style={width=0.92\textwidth, height=4.4cm},
+  ygrid/.style={xmajorgrids=false},
+  xgrid/.style={ymajorgrids=false},
+  dot/.style={only marks, mark=*, mark size=1.05pt, draw opacity=0, fill opacity=0.6},
+  % Two-panel groups also need group style={group size=2 by 1, ...}.
+  pair/.style={rpt, half},
+}
+\tikzset{
+  infobox/.style={draw=csubtle, fill=white, fill opacity=0.9, text opacity=1,
+                  rounded corners=1pt, font=\scriptsize, align=left, inner sep=2pt},
+  lbl/.style={font=\scriptsize, inner sep=1pt},
+}
+\colorlet{cbody-small}{cteal}
+\colorlet{cbody-midlarge}{cblue}
+\colorlet{cbody-suv}{camber}
+\colorlet{cbody-pickup}{cterra}
+\colorlet{cbody-van}{cnavy}
+\colorlet{cfuel-X}{cnavy}
+\colorlet{cfuel-Z}{camber}
+\colorlet{cfuel-D}{cteal}
+\colorlet{cfuel-E}{cterra}
+
+% \preparedbox{<table macro>}{<row>}{<plot options>}: one boxplot from a row
+% with columns lw, lq, med, uq, uw (see box_stats in analysis/plot_data.py).
+\newcommand{\preparedbox}[3]{%
+  \pgfplotstablegetelem{#2}{lw}\of#1\let\bxlw\pgfplotsretval
+  \pgfplotstablegetelem{#2}{lq}\of#1\let\bxlq\pgfplotsretval
+  \pgfplotstablegetelem{#2}{med}\of#1\let\bxmed\pgfplotsretval
+  \pgfplotstablegetelem{#2}{uq}\of#1\let\bxuq\pgfplotsretval
+  \pgfplotstablegetelem{#2}{uw}\of#1\let\bxuw\pgfplotsretval
+  \edef\bxplot{\noexpand\addplot[#3, boxplot prepared={lower whisker=\bxlw,
+    lower quartile=\bxlq, median=\bxmed, upper quartile=\bxuq, upper whisker=\bxuw}]
+    coordinates {};}%
+  \bxplot}

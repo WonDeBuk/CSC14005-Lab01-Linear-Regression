@@ -1,0 +1,28 @@
+% Fig 09: predicted CO2 vs engine size in M8b for four vehicle profiles.
+\begin{tikzpicture}
+\begin{axis}[rpt, width=0.86\textwidth, height=4.4cm,
+  title={Tương tác dung tích động cơ $\times$ nhóm xe trong M8b (cố định 6 xi-lanh, xăng thường, AS6)},
+  xlabel={Dung tích động cơ (L)}, ylabel={\COtwo{} dự đoán (g/km)}, xmin=1.5, xmax=6.2,
+  legend pos=north west]
+  \addplot[name path=vh, draw=none, forget plot] table[x=eng, y=hi] {\figdata{fig09-van}};
+  \addplot[name path=vl, draw=none, forget plot] table[x=eng, y=lo] {\figdata{fig09-van}};
+  \addplot[cnavy, fill opacity=0.14, forget plot] fill between[of=vh and vl];
+  \addplot[name path=sh, draw=none, forget plot] table[x=eng, y=hi] {\figdata{fig09-small}};
+  \addplot[name path=sl, draw=none, forget plot] table[x=eng, y=lo] {\figdata{fig09-small}};
+  \addplot[cblue, fill opacity=0.14, forget plot] fill between[of=sh and sl];
+  \addplot[name path=ph, draw=none, forget plot] table[x=eng, y=hi] {\figdata{fig09-pickup}};
+  \addplot[name path=pl, draw=none, forget plot] table[x=eng, y=lo] {\figdata{fig09-pickup}};
+  \addplot[camber, fill opacity=0.14, forget plot] fill between[of=ph and pl];
+  \addplot[name path=hh, draw=none, forget plot] table[x=eng, y=hi] {\figdata{fig09-hybrid}};
+  \addplot[name path=hl, draw=none, forget plot] table[x=eng, y=lo] {\figdata{fig09-hybrid}};
+  \addplot[cteal, fill opacity=0.14, forget plot] fill between[of=hh and hl];
+  \addplot[cnavy, thick] table[x=eng, y=mean] {\figdata{fig09-van}};
+  \addlegendentry{Van \& đặc dụng (độ dốc \slopeVan{} g/km/L)}
+  \addplot[cblue, thick] table[x=eng, y=mean] {\figdata{fig09-small}};
+  \addlegendentry{Xe thường (xe nhỏ) (độ dốc \slopeBase{} g/km/L)}
+  \addplot[camber, thick] table[x=eng, y=mean] {\figdata{fig09-pickup}};
+  \addlegendentry{Bán tải (độ dốc \slopePickup{} g/km/L)}
+  \addplot[cteal, thick] table[x=eng, y=mean] {\figdata{fig09-hybrid}};
+  \addlegendentry{Xe hybrid (độ dốc \slopeHybrid{} g/km/L)}
+\end{axis}
+\end{tikzpicture}

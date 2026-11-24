@@ -1,0 +1,31 @@
+% Fig 04: hybrid flag before / after the fix (P8).
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.55cm}, rpt, height=4.5cm]
+\nextgroupplot[title={(a) Phần dư M3 làm lộ các xe hybrid bị sót}, width=0.50\textwidth,
+  xlabel={\COtwo{} dự đoán bởi M3 (g/km)}, ylabel={Phần dư M3 (g/km)},
+  ymax=190, legend pos=north east]
+  \addplot[cink, dashed, forget plot] coordinates {(100,0) (450,0)};
+  \addplot[dot, csubtle, fill opacity=0.45] table[x=fit, y=res] {\figdata{fig04-regular}};
+  \addlegendentry{Xe thường}
+  \addplot[only marks, mark=*, mark size=1.7pt, cteal, draw=white, line width=0.3pt]
+    table[x=fit, y=res] {\figdata{fig04-named}};
+  \addlegendentry{Hybrid có chữ \texttt{HYBRID}}
+  \addplot[only marks, mark=diamond*, mark size=2.4pt, cterra, draw=white, line width=0.3pt]
+    table[x=fit, y=res] {\figdata{fig04-missed}};
+  \addlegendentry{Hybrid bị sót (Lexus \dots h, Prius, CR-Z)}
+\nextgroupplot[title={(b) Hệ số hybrid (KTC 95\% HC3) và BIC}, width=0.39\textwidth, ygrid,
+  xlabel={Ước lượng hệ số hybrid (g/km)},
+  xmin=-68, xmax=6, ymin=-0.6, ymax=1.6, ytick={0,1}, ymajorgrids=false, xmajorgrids=true,
+  yticklabels={{Cờ cũ\\($n = \nHybridOld$)}, {Cờ đã sửa\\($n = \nHybrid$)}},
+  yticklabel style={align=center}]
+  \draw[csubtle, dashed] (axis cs:0,-0.6) -- (axis cs:0,1.6);
+  \draw[cblue, very thick, |-|] (axis cs:\pvHybOldLo,0) -- (axis cs:\pvHybOldHi,0);
+  \draw[cblue, very thick, |-|] (axis cs:\pvHybNewLo,1) -- (axis cs:\pvHybNewHi,1);
+  \fill[cnavy] (axis cs:\pvHybOld,0) circle (2.2pt);
+  \fill[cterra] (axis cs:\pvHybNew,1) circle (2.4pt);
+  \node[lbl, anchor=north west, text=cmuted, font=\tiny] at (axis cs:-66,-0.22)
+    {\bHybridOld{} g/km \;|\; BIC = \bicThreeHOld};
+  \node[lbl, anchor=south west, text=cterra, font=\tiny\bfseries] at (axis cs:-66,1.22)
+    {\bHybrid{} g/km \;|\; BIC = \bicThreeH{} ($-$\bicDropFlag)};
+\end{groupplot}
+\end{tikzpicture}

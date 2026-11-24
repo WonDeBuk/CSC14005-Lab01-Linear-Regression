@@ -1,0 +1,39 @@
+% Fig 03: Pearson correlation matrix, and CO2 by body group (boxplots).
+\pgfplotstableread{\figdata{fig03-box}}\boxtable
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=2.9cm}, rpt, half]
+\nextgroupplot[title={(a) Ma trận tương quan Pearson},
+  width=0.42\textwidth, height=0.42\textwidth,
+  axis on top, grid=none, enlargelimits=false,
+  xmin=-0.5, xmax=5.5, ymin=-0.5, ymax=5.5, y dir=reverse,
+  xtick={0,...,5}, ytick={0,...,5},
+  xticklabels={\COtwo, Dung tích, Xi-lanh, Số cấp, CVT (0 cấp), Hybrid},
+  yticklabels={\COtwo, Dung tích, Xi-lanh, Số cấp, CVT (0 cấp), Hybrid},
+  x tick label style={rotate=35, anchor=north east, inner sep=1pt},
+  colormap={rdbu}{rgb255=(33,102,172) rgb255=(247,247,247) rgb255=(178,24,43)},
+  point meta min=-1, point meta max=1,
+  colorbar, colorbar style={width=2.5mm, ytick={-1,-0.5,0,0.5,1},
+    yticklabel style={font=\tiny, /pgf/number format/use comma}}]
+  \addplot[matrix plot*, mesh/cols=6, point meta=explicit]
+    table[x=x, y=y, meta=r] {\figdata{fig03-corr}};
+  \addplot[only marks, mark=none, point meta=explicit symbolic,
+    visualization depends on={\thisrow{r} \as \rv},
+    nodes near coords={\pgfmathparse{abs(\rv)>0.55}%
+      \ifdim\pgfmathresult pt>0.5pt\color{white}\else\color{cink}\fi\pgfplotspointmeta},
+    nodes near coords align=center, every node near coord/.append style={font=\tiny}]
+    table[x=x, y=y, meta=label] {\figdata{fig03-corr}};
+\nextgroupplot[title={(b) Phân phối \COtwo{} theo nhóm thân xe}, ygrid,
+  width=0.46\textwidth, height=0.42\textwidth,
+  ylabel={Phát thải \COtwo{} (g/km)},
+  xtick={1,...,5}, xmin=0.4, xmax=5.6,
+  xticklabels={Xe nhỏ, Trung--lớn, SUV, Bán tải, Van \& ĐD},
+  boxplot/draw direction=y, boxplot/box extend=0.5]
+  \preparedbox{\boxtable}{0}{draw=cink, solid, fill=cbody-small, fill opacity=0.7}
+  \preparedbox{\boxtable}{1}{draw=cink, solid, fill=cbody-midlarge, fill opacity=0.7}
+  \preparedbox{\boxtable}{2}{draw=cink, solid, fill=cbody-suv, fill opacity=0.7}
+  \preparedbox{\boxtable}{3}{draw=cink, solid, fill=cbody-pickup, fill opacity=0.7}
+  \preparedbox{\boxtable}{4}{draw=cink, solid, fill=cbody-van, fill opacity=0.7}
+  \addplot[only marks, mark=*, mark size=0.9pt, cmuted, fill opacity=0.6, draw opacity=0]
+    table[x=pos, y=y] {\figdata{fig03-box-out}};
+\end{groupplot}
+\end{tikzpicture}

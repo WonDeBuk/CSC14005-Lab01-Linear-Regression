@@ -1,0 +1,74 @@
+\section{Dữ liệu, phân tích khám phá và tiền xử lý}
+\label{sec:data}
+
+\subsection{Nguồn dữ liệu, biến đầu vào và quy trình tiền xử lý}
+Bộ dữ liệu là bảng xếp hạng tiêu thụ nhiên liệu và phát thải \COtwo{} xe hạng nhẹ năm 2014 của Bộ Tài nguyên Thiên nhiên Canada~\cite{nrcan2014fuel} (tệp \texttt{FuelConsumptionCo2.csv}~\cite{ibm2014fuelco2}), gồm \nCars{} quan sát thuộc \nMakes{} hãng và \nCols{} thuộc tính, không có giá trị khuyết (\texttt{NaN}). Trên toàn tập dữ liệu, biến mục tiêu \texttt{CO2EMISSIONS} dao động từ \coMin{} đến \coMax{} g/km (trung bình \coMean{}, trung vị \coMedian{}, ĐLC \coSd{} g/km); dung tích động cơ (\texttt{ENGINESIZE}) có trung bình \engMean{} $\pm$ \engSd{} L (từ \engMin{} đến \engMax{} L); số xi-lanh từ \cylMin{} đến \cylMax{} (trung vị \cylMedian{}); và trong \nGeared{} xe hộp số phân cấp cố định (ngoài \nNoGear{} xe vô cấp \texttt{AV}), số cấp trải từ \gearsMin{} đến \gearsMax{} (trung vị \gearsMedian{}). Bảng~\ref{tab:vars-fe} hợp nhất toàn bộ thuộc tính gốc cùng các bước tiền xử lý và tạo đặc trưng.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Thuộc tính gốc trong \texttt{FuelConsumptionCo2.csv}, xử lý tạo đặc trưng và lý do thống kê.}
+  \label{tab:vars-fe}
+  \footnotesize
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{5.5cm} >{\raggedright\arraybackslash}p{6.5cm}@{}}
+    \toprule
+    Cột gốc & Cách xử lý / đặc trưng dẫn xuất & Lý do kỹ thuật và thống kê \\
+    \midrule
+    \texttt{MODELYEAR} & Loại bỏ & Cột hằng (tất cả đều là năm 2014) \\
+    \texttt{FUELCONSUMPTION\_*} & Loại bỏ cả 4 cột tiêu thụ nhiên liệu & Rò rỉ mục tiêu: \COtwo{} quy đổi trực tiếp từ đây (Mục~\ref{sec:leakage}) \\
+    \texttt{ENGINESIZE}, \texttt{CYLINDERS} & Giữ nguyên dạng số; tạo bình phương và tương tác trong M4, M8b & Đặc trưng động cơ chính; giữ cả hai dù VIF sát 10 để kiểm định riêng và đối chiếu Ridge \\
+    \texttt{FUELTYPE} & Mã hóa 3 biến giả (\texttt{Z}, \texttt{D}, \texttt{E}; tham chiếu \texttt{X}) & Tránh bẫy đa cộng tuyến; so sánh trực tiếp với xăng thường \\
+    \texttt{VEHICLECLASS} & Gom \nVehicleClasses{} hạng thành \texttt{BODY} (5 mức; tham chiếu xe nhỏ) & Giảm từ 15 xuống 4 biến giả, tránh phình sai số chuẩn ở hạng ít mẫu \\
+    \texttt{TRANSMISSION} & Tách thành \texttt{TRANS\_TYPE} (tham chiếu \texttt{A}), \texttt{GEARS}, \texttt{NOGEAR} & Xử lý khuyết có cấu trúc cho \nNoGear{} xe vô cấp \texttt{AV} (\texttt{GEARS}=0, \texttt{NOGEAR}=1) \\
+    \texttt{MAKE}, \texttt{MODEL} & Không đưa trực tiếp; trích cờ \texttt{HYBRID} (tên chứa \texttt{HYBRID}, \texttt{PRIUS}, \texttt{CR-Z}, Lexus \texttt{...h}) & Sửa \nHybridMissed{} xe hybrid bị bỏ sót khi lọc theo chuỗi đơn thuần, tránh sai số hệ thống \\
+    \texttt{CO2EMISSIONS} & Biến mục tiêu $y$ (giữ thang gốc g/km) & Giữ diễn giải vật lý; kiểm chứng riêng thang log ở M4log \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Toàn bộ bước mã hóa \texttt{OneHotEncoder} và chuẩn hóa \texttt{StandardScaler} (dùng cho Ridge M5 và Bayesian M6) được đóng gói trong \texttt{Pipeline} của \texttt{scikit-learn}~\cite{pedregosa2011sklearn} và chỉ khớp trên tập huấn luyện sau khi hoán vị ngẫu nhiên (\texttt{seed = 42}, chia 80/20 thành \nTrain{} xe train và \nTest{} xe test), ngăn ngừa rò rỉ thông tin từ tập kiểm tra.
+
+\subsection{Phân tích khám phá dữ liệu (EDA)}
+
+\subsubsection{Phân phối mục tiêu và phát hiện rò rỉ dữ liệu}
+\label{sec:leakage}
+Trên thang gốc, \texttt{CO2EMISSIONS} lệch phải nhẹ (độ lệch \coSkew{}, Jarque--Bera $JB = \jbRaw$, $p \jbRawP$), còn trên thang $\ln(\text{CO}_2)$ phân phối đối xứng hơn (độ lệch \logSkew{}, $JB = \jbLog$, $p = \jbLogP$); tuy nhiên, vì giả thiết chuẩn áp dụng cho phần dư chứ không cho phân phối biên của $y$, nhóm giữ thang gốc và kiểm chứng biến đổi log ở mô hình M4log.
+
+Kiểm tra rò rỉ dữ liệu cho thấy tỉ số \texttt{CO2EMISSIONS} / \texttt{FUELCONSUMPTION\_COMB} gần như là hằng số tuyệt đối trong từng nhiên liệu: \ratioX{} (xăng thường \texttt{X}), \ratioZ{} (cao cấp \texttt{Z}), \ratioD{} (diesel \texttt{D}) và \ratioE{} (ethanol E85 \texttt{E}), với hệ số biến thiên không vượt quá \ratioCvMax\%. Như Hình~\ref{fig:leak-eda}(a) minh họa, các điểm nằm thẳng hàng trên ba đường tuyến tính; đưa \texttt{FUELCONSUMPTION\_COMB} và tương tác nhiên liệu vào OLS đạt $R^2 = \leakRtwo$ và RMSE $= \leakRmse$ g/km trên tập test. Vì \COtwo{} thực chất được quy đổi từ mức tiêu thụ nhiên liệu đo sau khi chạy thử, cả bốn cột \texttt{FUELCONSUMPTION\_*} bắt buộc phải bị loại.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig02-leakage-eda}
+  \caption{(a) Quan hệ gần như tất định giữa \COtwo{} và tiêu thụ nhiên liệu kết hợp theo loại nhiên liệu (rò rỉ mục tiêu). (b) \COtwo{} theo dung tích động cơ phân màu theo 5 nhóm thân xe, kèm đường hồi quy đơn M1.}
+  \label{fig:leak-eda}
+\end{figure}
+
+\subsubsection{Phân nhóm, tương quan và đa cộng tuyến}
+Bảng~\ref{tab:eda-groups} và Hình~\ref{fig:corr-body} cho thấy phát thải trung bình tăng dần theo nhóm thân xe từ xe nhỏ đến van \& đặc dụng. Đáng chú ý, trên trung bình thô, xe chạy ethanol E85 có \COtwo{} cao nhất (\meanE{} so với \meanX{} g/km ở xăng thường), nhưng dung tích trung bình của nhóm E85 cũng lên tới \engE{} L so với \engX{} L ở xăng thường --- bằng chứng sớm cho biến gây nhiễu sẽ được kiểm định ở Mục~\ref{sec:simpson}. Về tương quan (Hình~\ref{fig:corr-body}(a)), \texttt{ENGINESIZE} ($r = \corrEngCo$) và \texttt{CYLINDERS} ($r = \corrCylCo$) tương quan mạnh với \COtwo{} và với nhau ($r = \corrEngCyl$). Trong M3 trên tập train, $\mathrm{VIF} = \vifEngine$ (dung tích) và $\vifCyl$ (xi-lanh), sát nhưng dưới ngưỡng 10 (các biến thiết kế độc lập còn lại đều dưới \vifMaxOther); nhóm giữ cả hai biến, diễn giải thận trọng và đối chiếu với Ridge (M5).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Phát thải \COtwo{} trung bình và dung tích động cơ trung bình theo nhiên liệu, thân xe và hệ truyền động.}
+  \label{tab:eda-groups}
+  \footnotesize
+  \input{tables/eda-groups.tex}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig03-corr-body}
+  \caption{(a) Ma trận tương quan Pearson giữa các biến số thiết kế và \COtwo{}. (b) Phân phối \COtwo{} theo 5 nhóm thân xe sau khi gom từ \nVehicleClasses{} hạng xe gốc.}
+  \label{fig:corr-body}
+\end{figure}
+
+\subsection{Hiệu chỉnh cờ hybrid từ chẩn đoán phần dư và xử lý xe flex-fuel}
+% TODO(review): kiểm tra lại phần trình bày trước/sau bước sửa nhãn hybrid và ghi nhận xe flex-fuel.
+Khi gán cờ hybrid đơn thuần bằng điều kiện tên mẫu chứa chuỗi \texttt{HYBRID}, chỉ nhận diện được \nHybridOld{} xe. Tuy nhiên, biểu đồ phần dư của mô hình M3 (Hình~\ref{fig:hybrid-fix}(a)) làm lộ một cụm \nHybridMissed{} xe không có chữ \texttt{HYBRID} trong tên (các mẫu Lexus hậu tố \texttt{h}, Toyota Prius, Honda CR-Z) nằm tách biệt ở vùng phần dư âm lớn tương tự nhóm hybrid đã gắn nhãn. Sau khi bổ sung quy tắc nhận diện (tổng \nHybrid{} xe hybrid), hệ số ước lượng đổi từ \bHybridOld{} thành \bHybrid{} g/km với khoảng tin cậy HC3 gọn hơn và BIC tập train giảm \bicDropFlag{} điểm (từ \bicThreeHOld{} xuống \bicThreeH{}, Hình~\ref{fig:hybrid-fix}(b)).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/fig04-hybrid-before-after}
+  \caption{Đối chiếu trước và sau bước sửa nhãn hybrid. (a) Phần dư M3 làm lộ \nHybridMissed{} xe hybrid không chứa chữ ``HYBRID'' trong tên. (b) Tác động lên $\hat\beta_{\mathrm{hybrid}}$ (KTC 95\% HC3) và BIC.}
+  \label{fig:hybrid-fix}
+\end{figure}
+
+Ngoài ra, bộ dữ liệu chứa \nPairs{} mẫu xe flex-fuel được chứng nhận hai lần trên cả xăng thường (\texttt{X}) và ethanol E85 (\texttt{E}). Vì nhiên liệu là thông số đầu vào, nhóm giữ nguyên cả hai dòng, ghi nhận sự vi phạm một phần giả thiết độc lập (G4) ở phần hạn chế và sử dụng chính \nPairs{} cặp xe này cho kiểm định $t$ ghép cặp độc lập ở Mục~\ref{sec:simpson}.

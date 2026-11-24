@@ -1,26 +1,79 @@
-% Báo cáo Lab 01 - Linear Regression (CSC14005). Biên dịch bằng pdfLaTeX (latexmk, xem latexmkrc).
-% Khuyến nghị 10-20 trang. Mọi số liệu lấy từ models/*.csv; mọi trích dẫn có trong references.bib.
-\documentclass[12pt,a4paper]{article}
-\usepackage[a4paper,margin=2.5cm]{geometry}
-\usepackage[T5]{fontenc}          % bảng mã tiếng Việt (vntex)
+% Báo cáo Đồ án Lab 01 - Linear Regression (CSC14005 - Nhập môn học máy)
+% Biên dịch bằng pdfLaTeX qua latexmk (xem latexmkrc).
+% Mọi số liệu trong bài được nạp tự động từ tables/numbers.tex (do analysis/analyze.py sinh).
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,top=2.0cm,bottom=2.0cm,left=2.0cm,right=2.0cm]{geometry}
+\usepackage[T5]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[vietnamese]{babel}
-\usepackage{mathptmx}             % Times, có bản T5 trong vntex
+
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{float}
+\usepackage{multirow}
+\usepackage{array}
 \usepackage{caption}
-\usepackage[numbers]{natbib}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\input{figures/tikz/style.tex}   % pgfplots charts; data from analysis/plot_data.py
+\usepackage{icomma}
+\usepackage{url}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
-\hypersetup{colorlinks, linkcolor=black, citecolor=black, urlcolor=blue, pdftitle={Báo cáo Lab 01: Linear Regression}}
+
+\definecolor{hcmusblue}{RGB}{27,73,101}
+\definecolor{linkblue}{RGB}{24,78,119}
+\definecolor{citegreen}{RGB}{20,108,67}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=linkblue,
+  citecolor=citegreen,
+  urlcolor=linkblue,
+  pdftitle={Báo cáo Đồ án Lab 01: Hồi quy tuyến tính - CSC14005},
+  pdfauthor={Nhóm thực hiện CSC14005}
+}
+
+% Bố cục gọn (mục tiêu 10-20 trang theo khuyến nghị đề bài)
+\setstretch{1.1}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\setlist{itemsep=2pt, topsep=3pt, parsep=0pt}
+\captionsetup{font=footnotesize, labelfont=bf, margin=0.2cm}
+\setcounter{tocdepth}{2}
+
+% Giảm khoảng trắng quanh bảng/hình và tránh trang trống chỉ chứa 1 hình
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\bottomfraction}{0.82}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+
 \graphicspath{{figures/}}
 
-% Tên mục theo cách gọi của báo cáo (babel đặt lại các tên này ở \begin{document}).
+% Khai báo ký tự Unicode dùng trong các bảng sinh tự động (pdfLaTeX T5)
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{00B2}{\ensuremath{^2}}
+\DeclareUnicodeCharacter{2082}{\textsubscript{2}}
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+
+% Nạp toàn bộ số liệu đã kiểm chứng từ analysis/analyze.py
+\input{tables/numbers.tex}
+\newcommand{\COtwo}{CO\textsubscript{2}}
+
+% Việt hóa tiêu đề mặc định của babel
 \addto\captionsvietnamese{%
   \renewcommand{\contentsname}{Mục lục}%
-  \renewcommand{\listfigurename}{Danh mục hình}%
-  \renewcommand{\listtablename}{Danh mục bảng}%
   \renewcommand{\refname}{Tài liệu tham khảo}%
   \renewcommand{\figurename}{Hình}%
   \renewcommand{\tablename}{Bảng}%
@@ -28,97 +81,77 @@
 
 \begin{document}
 
-\pagenumbering{gobble}
+% =========================================================================
+% TRANG BÌA (Khoa CNTT - ĐH KHTN TP.HCM)
+% =========================================================================
 \begin{titlepage}
   \centering
-  {\large ĐẠI HỌC QUỐC GIA TP.HCM\\TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\\KHOA CÔNG NGHỆ THÔNG TIN\par}
-  \vspace{3cm}
+  {\large ĐẠI HỌC QUỐC GIA TP.HCM\par}
+  \vspace{0.25cm}
+  {\large TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\par}
+  \vspace{0.2cm}
+  {\normalsize KHOA CÔNG NGHỆ THÔNG TIN\par}
+
+  \vspace{1.2cm}
+  \includegraphics[width=4.6cm]{logo-hcmus.png}\par
+
+  \vspace{1.2cm}
+  \rule{\linewidth}{1.4pt}\par
+  \vspace{0.45cm}
   {\LARGE\bfseries BÁO CÁO ĐỒ ÁN LAB 01\par}
-  \vspace{0.5cm}
-  {\Large Đề tài: Ước tính lượng phát thải CO\textsubscript{2} của xe hạng nhẹ\\từ thông số thiết kế bằng hồi quy tuyến tính\par}
-  \vspace{0.5cm}
-  {\large Môn học: CSC14005 -- Nhập môn học máy\par}
-  \vfill
-  \begin{minipage}[t]{0.55\textwidth}
-    \textbf{Nhóm:} % TODO(team): mã nhóm
-    \\[0.3cm]
-    \textbf{Sinh viên thực hiện:}\\
-    24127020 -- Nguyễn Thành Đạt\\
-    24127039 -- Phan Quang Hiệp\\
-    24127183 -- Trần Duy Khang\\
-    24127500 -- Nguyễn Đại Phúc\\
-    24127508 -- Lê Nho Duy Phước
+  \vspace{0.35cm}
+  {\large\bfseries Đề tài: ƯỚC TÍNH PHÁT THẢI \COtwo{} CỦA XE HẠNG NHẸ\\
+  TỪ THÔNG SỐ THIẾT KẾ BẰNG HỒI QUY TUYẾN TÍNH\par}
+  \vspace{0.4cm}
+  \rule{\linewidth}{1.4pt}\par
+
+  \vspace{0.7cm}
+  {\large\bfseries Môn học: CSC14005 -- Nhập môn học máy\par}
+
+  \vspace{1.6cm}
+  \begin{minipage}[t]{0.56\textwidth}
+    \raggedright
+    \textit{Sinh viên thực hiện:}\\[0.2cm]
+    Nguyễn Thành Đạt -- 24127020\\[0.1cm]
+    Phan Quang Hiệp -- 24127039\\[0.1cm]
+    Trần Duy Khang -- 24127183\\[0.1cm]
+    Nguyễn Đại Phúc -- 24127500\\[0.1cm]
+    Lê Nho Duy Phước -- 24127508
   \end{minipage}\hfill
   \begin{minipage}[t]{0.38\textwidth}
-    \textbf{Giáo viên hướng dẫn:}\\
-    Thầy Bùi Tiến Lên\\
+    \raggedright
+    \textit{Giáo viên hướng dẫn:}\\[0.2cm]
+    Thầy Bùi Tiến Lên\\[0.1cm]
     Thầy Võ Nhật Tân
   \end{minipage}
-  \vfill
-  {\today\par}
-\end{titlepage}
-\pagenumbering{roman}
 
+  \vfill
+  {\normalsize TP. Hồ Chí Minh, ngày 24 tháng 11 năm 2026\par}
+\end{titlepage}
+
+% =========================================================================
+% MỤC LỤC
+% =========================================================================
+\pagenumbering{roman}
 \tableofcontents
-\listoftables
-\listoffigures
 \clearpage
+
+% =========================================================================
+% NỘI DUNG CHÍNH
+% =========================================================================
 \pagenumbering{arabic}
 
-% Khung 8 chương theo mục 16 của moodboard (khoảng 19 trang). Số trang ở mỗi chương là mục tiêu.
-% Mọi số liệu lấy từ models/*.csv hoặc linreg.inference; phần diễn giải do thành viên tự viết.
+\input{sections/01-gioi-thieu}
+\input{sections/02-co-so-ly-thuyet}
+\input{sections/03-du-lieu}
+\input{sections/04-mo-hinh}
+\input{sections/05-danh-gia}
+\input{sections/06-dien-giai}
+\input{sections/07-ung-dung}
+\input{sections/08-ket-luan}
 
-\section{Giới thiệu} % 1,5 trang -- mục 04, 07
-\subsection{Bối cảnh và động lực}
-% Phát thải CO2 của xe mới; vì sao ước tính từ thông số thiết kế có ích.
-\subsection{Mục tiêu và phạm vi}
-% Dự đoán CO2EMISSIONS (g/km) từ thông số thiết kế; không dùng mức tiêu thụ nhiên liệu.
-\subsection{Phân công công việc}
-% TODO(team): bảng 1 -- thành viên, kênh mô hình (M1, M2, M3, Ridge, Bayesian), phần báo cáo.
-\subsection{Sử dụng công cụ AI}
-% TODO(team): công cụ AI đã dùng, cho việc gì, và cách nhóm kiểm tra lại nội dung.
-
-\section{Cơ sở lý thuyết} % 2 trang -- mục 05, 09
-\subsection{Hồi quy tuyến tính và bình phương tối thiểu}
-% Phương trình chuẩn, bốn giả định và cách kiểm tra.
-\subsection{Biến giả, tương tác và biến đổi}
-% Biến giả, tương tác, biến đổi log và hệ số smearing của Duan.
-\subsection{Ridge và hồi quy Bayesian}
-% Co rút L2 như MAP; prior Normal-Inverse-Gamma, posterior, khoảng đáng tin, khoảng dự đoán.
-\subsection{Chỉ số đánh giá và kiểm chứng chéo}
-% MAE, RMSE, R2, R2 hiệu chỉnh, AIC/BIC; CV 10-fold; t hiệu chỉnh Nadeau--Bengio.
-
-\section{Dữ liệu} % 3 trang -- mục 08 (P1--P9)
-\subsection{Nguồn và mô tả}
-% 1.067 xe x 13 cột, bảng mô tả biến.
-\subsection{Phân tích khám phá}
-% Phân phối CO2, tương quan, đa cộng tuyến (VIF), rò rỉ qua mức tiêu thụ nhiên liệu, xe flex-fuel.
-\subsection{Tiền xử lý}
-% Mỗi bước: What, Why, How. Gom 16 hạng xe thành 5 nhóm, tách hộp số, cờ HYBRID, chia train/test.
-
-\section{Xây dựng mô hình} % 3 trang -- mục 06, 09, 12
-% M1 -> M8b theo thứ tự câu hỏi; mỗi mô hình: biến, lý do, kết quả.
-% Bảng 2: hệ số M3h với KTC t, HC3 và bootstrap.
-
-\section{Đánh giá và so sánh} % 4 trang -- mục 09--12
-\subsection{So sánh các mô hình}
-% Bảng 3: train, CV 10-fold, test cho mọi mô hình (models/metrics.csv).
-\subsection{Kiểm định giữa các mô hình}
-% F từng phần, Nadeau--Bengio.
-\subsection{Phân tích phần dư và độ bền vững}
-% Residual plot, Q--Q, Breusch--Pagan, Jarque--Bera, Cook; đường cong học, bias--variance.
-
-\section{Diễn giải hệ số và câu hỏi thống kê} % 2 trang -- mục 13, 12.8
-% Chỉ dựa trên kết quả mô hình (đề bài 3.3). Mỗi câu: H0, phép kiểm định, số liệu, quyết định,
-% mục tương ứng trong sách của thầy Lên. Gồm nghịch lý Simpson của E85 và đối chiếu Bayesian.
-
-\section{Ứng dụng} % 1,5 trang -- mục 14
-% Tính năng, giao diện, đầu vào/đầu ra, cách nạp mô hình; 2--3 ảnh chụp màn hình; link video demo.
-
-\section{Kết luận} % 1 trang -- mục 15
-% Tóm tắt kết quả, hạn chế, hướng phát triển.
-
-\nocite{*}
+\phantomsection
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
 \bibliographystyle{plainnat}
 \bibliography{references}
 

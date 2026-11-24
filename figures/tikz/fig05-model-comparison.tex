@@ -1,0 +1,20 @@
+% Fig 05: CV vs test RMSE for every linear model and the GP nonlinear ceiling.
+\begin{tikzpicture}
+\begin{axis}[rpt, width=0.86\textwidth, height=4.7cm, xgrid,
+  title={So sánh RMSE CV 10-fold (TB $\pm$ 1 ĐLC) và RMSE tập kiểm tra},
+  xlabel={RMSE (g/km)}, xmin=18, xmax=38, y dir=reverse,
+  ytick=data, yticklabels from table={\figdata{fig05-models}}{model},
+  ymin=-0.6, ymax=8.6, legend pos=south east]
+  \addplot[only marks, mark=*, mark size=1.8pt, cnavy,
+    error bars/.cd, x dir=both, x explicit, error bar style={cblue, thick}, error mark options={rotate=90, cblue, mark size=2pt}]
+    table[x=cv, y expr=\thisrow{pos}-0.16, x error=cvsd] {\figdata{fig05-models}};
+  \addlegendentry{CV 10-fold (TB $\pm$ 1 ĐLC)}
+  \addplot[only marks, mark=square*, mark size=1.8pt, cterra]
+    table[x=test, y expr=\thisrow{pos}+0.16] {\figdata{fig05-models}};
+  \addlegendentry{RMSE tập kiểm tra}
+  \addplot[cteal, densely dotted, very thick] coordinates {(\pvGpRmse,-0.6) (\pvGpRmse,8.6)};
+  \addlegendentry{Mốc phi tuyến GP (\gpRmse)}
+  % Hidden plot so ytick=data picks up every model position.
+  \addplot[draw=none, forget plot] table[x=cv, y=pos] {\figdata{fig05-models}};
+\end{axis}
+\end{tikzpicture}

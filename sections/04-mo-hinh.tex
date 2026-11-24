@@ -1,0 +1,45 @@
+\section{Xây dựng và huấn luyện mô hình}
+\label{sec:models}
+
+\subsection{Thiết lập thực nghiệm và thang 9 mô hình tuyến tính}
+Nhóm xây dựng chuỗi 9 mô hình hồi quy tuyến tính theo tiến trình gia tăng có kiểm soát: mỗi bước chỉ thêm hoặc thay đổi một thành phần cụ thể (nhóm biến, phép biến đổi thang đo, chính quy hóa hoặc ước lượng Bayes), đánh giá trên tập huấn luyện (\nTrain{} xe) bằng kiểm chứng chéo 10-fold, kiểm định $F$ từng phần và BIC. Tập kiểm tra (\nTest{} xe) được giữ kín và mở duy nhất một lần sau khi hoàn tất thiết kế. Cả 9 mô hình đều \textbf{tuyến tính theo tham số}, cài đặt thống nhất qua \texttt{Pipeline} trong \texttt{src/linreg/models.py} (\texttt{NumPy}, \texttt{pandas}, \texttt{scikit-learn}, \texttt{SciPy}, \texttt{statsmodels}~\cite{harris2020numpy, mckinney2010pandas, pedregosa2011sklearn, virtanen2020scipy, seabold2010statsmodels}), và đều loại bỏ hoàn toàn các cột tiêu thụ nhiên liệu gây rò rỉ. Bảng~\ref{tab:ladder} tóm tắt thiết kế của từng mô hình; các chỉ số $F$, BIC và RMSE chi tiết được tổng hợp tại Chương~\ref{sec:eval}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Thang 9 mô hình hồi quy tuyến tính theo tham số được thiết kế và huấn luyện trong đồ án.}
+  \label{tab:ladder}
+  \footnotesize
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{5.5cm} r >{\raggedright\arraybackslash}p{6.6cm}@{}}
+    \toprule
+    Mã & Thành phần thêm / thay đổi & $p$ & Lý do thiết kế \\
+    \midrule
+    M1 & Hồi quy đơn theo \texttt{ENGINESIZE} & 2 & Mốc cơ sở (biến tương quan mạnh nhất với \COtwo{}, $r = \corrEngCo$) \\
+    M2 & M1 + \texttt{CYLINDERS} & 3 & Kiểm tra thông tin bổ sung của số xi-lanh ngoài dung tích \\
+    M3 & M2 + nhiên liệu, thân xe, hộp số (\texttt{GEARS}, \texttt{NOGEAR}) & 16 & Đưa đầy đủ cấu hình thiết kế (nhiên liệu, thân xe, truyền động) \\
+    M3h & M3 + cờ \texttt{HYBRID} đã hiệu chỉnh & 17 & Khắc phục \nHybridMissed{} xe hybrid bị sót phát hiện từ phần dư M3 \\
+    M4 & M3 + \texttt{ENGINESIZE}$^2$, \texttt{ENGINESIZE} $\times$ (D, E85) & 19 & Kiểm định quan hệ cong và khác biệt độ dốc theo nhiên liệu \\
+    M4log & M4 khớp trên $\ln(\text{CO}_2)$ + Duan smearing & 19 & Kiểm tra xem biến đổi log có cải thiện sai số và phương sai phần dư \\
+    M5 & Ridge ($\ell_2$, $\lambda = 3$) trên biến M4 (chuẩn hóa) & 19 & Cầu nối MAP Gaussian; kiểm chứng xử lý đa cộng tuyến (VIF $\approx 10$) \\
+    M6 & Bayesian NIG trên biến M3h (prior yếu $\tau = 1.000$) & 17 & Suy diễn xác suất hậu nghiệm đầy đủ và khảo sát độ nhạy prior \\
+    M8b & M3h + \texttt{ENGINESIZE} $\times$ (bán tải, van, hybrid) & 20 & Cho phép độ dốc theo dung tích thay đổi theo từng phân khúc xe \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Mô hình M6 sử dụng tiên nghiệm liên hợp yếu ($\tau = 1.000$ theo đơn vị $\sigma$, $a_0 = b_0 = 10^{-3}$) cài đặt dạng đóng theo~\eqref{eq:nig-post} trong \texttt{src/linreg/bayes.py}; do $n = \nTrain{} \gg p = 17$, trung bình hậu nghiệm trùng với OLS M3h và giá trị chính của M6 nằm ở suy diễn hậu nghiệm (Mục~\ref{sec:bayes}). Với Ridge (M5), khảo sát lưới 36 giá trị $\lambda \in [10^{-2}, 3\times 10^3]$ qua 10-fold CV cho thấy đường RMSE CV gần như phẳng trên miền $\lambda \le 10$ (cực tiểu \ridgeBestCv{} g/km tại $\lambda^* = \ridgeBestLam$) trước khi tăng mạnh khi $\lambda > 30$.
+
+\subsection{Mở rộng tương tác theo nhóm xe (M8b) và mốc tham chiếu phi tuyến}
+% TODO(review): nhóm đọc lại lập luận đối chiếu M3h với M8b và xác nhận mô hình khuyến nghị cuối cùng.
+Khảo sát trực quan Hình~\ref{fig:leak-eda}(b) theo nhóm thân xe kết hợp kiểm tra phần dư của M3h theo từng phân khúc trên tập huấn luyện gợi ý độ dốc giữa \COtwo{} và dung tích động cơ không đồng nhất giữa các nhóm xe. Từ đó, nhóm xây dựng \textbf{M8b} ($p = 20$) bổ sung ba số hạng tương tác \texttt{ENGINESIZE} $\times$ (\texttt{pickup}, \texttt{van}, \texttt{HYBRID}) vào M3h (Bảng~\ref{tab:m8b}, đường dự đoán minh họa tại Hình~\ref{fig:m8b-inter} ở Chương~\ref{sec:questions}). Vì ba tương tác này được lựa chọn sau khi quan sát tập huấn luyện, giá trị $p$ trong Bảng~\ref{tab:m8b} mang tính lạc quan so với kiểm định đặt ra trước khi thấy dữ liệu. Để cân bằng giữa độ chính xác ngoài mẫu và tính minh bạch trong kiểm định giả thuyết, báo cáo dùng song song \textbf{M3h} cho diễn giải hiệu ứng biên ở Chương~\ref{sec:questions} và \textbf{M8b} cho dự đoán tối ưu (ứng dụng CO\textsubscript{2} Studio cho phép chuyển đổi trực tiếp giữa hai mô hình).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Ước lượng các số hạng tương tác trong M8b trên tập huấn luyện (SE HC3; giá trị $p$ lạc quan do chọn tương tác trên tập train).}
+  \label{tab:m8b}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \input{tables/m8b-interactions.tex}
+\end{table}
+
+\paragraph{Mốc tham chiếu phi tuyến (không tính vào tập mô hình tuyến tính).}
+Để kiểm tra xem 16 biến thiết kế có còn chứa nhiều cấu trúc phi tuyến bị bỏ sót hay không, nhóm huấn luyện thêm một mốc tham chiếu phi tuyến là Gaussian Process Regression (hạt nhân RBF cộng WhiteKernel) trên cùng đặc trưng của M3h. Trên tập kiểm tra, Gaussian Process đạt RMSE $= \gpRmse$ g/km ($R^2 = \gpRtwo$), chỉ thấp hơn M8b đúng \gpGapEightB{} g/km. Kết quả này cho thấy mô hình tuyến tính kèm ba tương tác chọn lọc đã khai thác gần như toàn bộ tín hiệu dự đoán có trong các thông số thiết kế.
