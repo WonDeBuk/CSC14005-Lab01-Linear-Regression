@@ -37,27 +37,34 @@ python -m linreg.train                 # huấn luyện 5 mô hình, ghi models/
 streamlit run app/streamlit_app.py     # ứng dụng dự đoán CO₂
 ```
 
-Kiểm định hệ số (Frequentist, sai số chuẩn HC3):
+Kiểm định (Frequentist, sai số chuẩn HC3) trên tập train:
 
 ```python
-from linreg.data import load_frame
-from linreg.inference import fit_ols
-print(fit_ols(load_frame(), "m3h_ols").summary())
+import pandas as pd
+from linreg.data import load_dataset
+from linreg.inference import fit_ols, partial_f_test, residual_diagnostics
+
+ds = load_dataset()
+train = pd.concat([ds.X_train, ds.y_train], axis=1)
+print(fit_ols(train, "M3h").summary())        # t-test từng hệ số, KTC 95%
+print(partial_f_test(train, "M3", "M3h"))     # F từng phần cho mô hình lồng nhau
 ```
 
 ## Mô hình
 
-Định nghĩa trong [`src/linreg/models.py`](src/linreg/models.py). Năm thành viên nên có năm mô hình, mọi mô hình tuyến tính theo tham số. Kết quả dưới đây từ `python -m linreg.train` (chia 854/213, seed 42, CV 10-fold trên tập train).
+Tên mô hình theo mục 09 của moodboard. Định nghĩa trong [`src/linreg/models.py`](src/linreg/models.py); mọi mô hình tuyến tính theo tham số. M7 (rò rỉ qua mức tiêu thụ nhiên liệu) bị loại có chủ đích. Kết quả từ `python -m linreg.train` (chia 854/213 bằng `default_rng(42)`, CV 10-fold trên tập train) khớp từng số với moodboard; `pytest` khoá các số này.
 
-| Mã | Mô hình | RMSE CV (g/km) | RMSE test (g/km) | R² test |
-|----|---------|---------------:|-----------------:|--------:|
-| `m8b_interactions` | M8b: M3h + dung tích × (bán tải, van, hybrid) | 22,05 ± 1,68 | 20,35 | 0,898 |
-| `m3h_ols` | M3h: OLS trên động cơ, xi-lanh, nhiên liệu, thân xe, hộp số, hybrid | 23,07 ± 1,72 | 20,95 | 0,892 |
-| `m3h_ridge` | Ridge trên biến M3h (MAP với prior Gauss) | 23,07 ± 1,72 | 20,97 | 0,892 |
-| `m3h_bayes` | Hồi quy Bayesian trên biến M3h (evidence maximization) | 23,08 ± 1,72 | 20,97 | 0,892 |
-| `m1_engine` | M1: OLS chỉ với dung tích động cơ (mốc) | 30,71 ± 2,37 | 31,17 | 0,761 |
-
-Số liệu gần với moodboard nhưng chưa khớp từng số; xem [docs/decisions.md](docs/decisions.md).
+| Mã | Mô hình | Số tham số | RMSE CV (g/km) | RMSE test (g/km) | R² test |
+|----|---------|-----------:|---------------:|-----------------:|--------:|
+| M1 | Hồi quy đơn theo dung tích động cơ (mốc) | 2 | 30,16 ± 2,75 | 33,01 | 0,758 |
+| M2 | M1 + số xi-lanh | 3 | 29,63 ± 2,69 | 32,46 | 0,766 |
+| M3 | M2 + nhiên liệu, nhóm thân xe, hộp số | 16 | 23,80 ± 2,08 | 25,29 | 0,858 |
+| M3h | M3 + cờ HYBRID (đã sửa nhãn, tức M3h′ ở mục 12) | 17 | 22,56 ± 2,29 | 24,08 | 0,871 |
+| M4 | M3 + dung tích², dung tích × (diesel, E85) | 19 | 23,80 ± 2,12 | 25,43 | 0,856 |
+| M4log | M4 trên log(CO₂), đổi ngược bằng smearing của Duan | 19 | 23,76 ± 2,15 | 25,37 | 0,857 |
+| M5 | Ridge trên biến M4, λ = 3 (cầu nối: MAP với prior Gauss) | 19 | 23,80 ± 2,10 | 25,38 | 0,857 |
+| M6 | Bayesian Normal-Inverse-Gamma trên biến M3h, prior yếu | 17 | 22,56 ± 2,29 | 24,08 | 0,871 |
+| M8b | M3h + dung tích × (bán tải, van, hybrid) | 20 | 21,61 ± 2,29 | 22,61 | 0,886 |
 
 ## Cấu trúc thư mục
 
@@ -68,7 +75,7 @@ Số liệu gần với moodboard nhưng chưa khớp từng số; xem [docs/dec
 ├── figures/               # hình cho báo cáo
 ├── models/                # mô hình đã huấn luyện (không commit)
 ├── notebooks/             # EDA và thí nghiệm
-├── src/linreg/            # config, features, data, models, inference, evaluate, train
+├── src/linreg/            # config, features, data, models, bayes, inference, evaluate, train
 ├── tests/                 # kiểm tra pipeline
 ├── main.tex               # báo cáo (XeLaTeX)
 └── references.bib

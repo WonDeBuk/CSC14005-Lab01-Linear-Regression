@@ -10,6 +10,7 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 - **Mục tiêu:** cực tiểu RMSE ngoài mẫu (CV 10-fold) mà mô hình vẫn diễn giải được, và trả lời có kiểm định câu hỏi "quyết định thiết kế nào đổi thành bao nhiêu gam CO₂".
 - **Dữ liệu:** Fuel Consumption Ratings 2014, Canada, 1.067 xe. Chi tiết: [data/README.md](data/README.md).
 - **Lăng kính thống kê:** thầy yêu cầu trình bày Linear Regression dưới cả hai trường phái **Frequentist** (OLS, kiểm định t/F, khoảng tin cậy) và **Bayesian** (prior, posterior, khoảng đáng tin). Báo cáo phải **đặt và kiểm định câu hỏi thống kê**, không chỉ xây mô hình rồi so điểm. Tài liệu chính: sách "Phân tích dữ liệu" (book-stat) của thầy Lên, chương 5–8, 10; khoá [PSU STAT 501](https://online.stat.psu.edu/stat501/).
+- **Moodboard (nguồn phân tích gốc):** [Mission LR-01](https://claude.ai/artifact/95knfAAW2ceeRQWnin9HKj). Repo tái hiện đúng từng số của moodboard; `tests/test_pipeline.py` khoá các số này. Thay đổi làm lệch số phải được ghi lý do.
 - **Đề bài:** [docs/requirements.md](docs/requirements.md). **Các quyết định đã có và việc còn mở:** [docs/decisions.md](docs/decisions.md).
 
 ## Quy tắc bắt buộc
@@ -31,12 +32,13 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 
 | Đường dẫn | Nội dung |
 |-----------|----------|
-| `src/linreg/config.py` | Đường dẫn, seed 42, chia 854/213, CV 10-fold, cột rò rỉ cần bỏ |
-| `src/linreg/features.py` | Nhóm thân xe, loại hộp số, cờ hybrid, biến tương tác |
+| `src/linreg/config.py` | Đường dẫn, seed 42, chia 854/213, CV 10-fold, cột cần bỏ |
+| `src/linreg/features.py` | Các bước P5–P8: nhóm thân xe, hộp số, cờ hybrid, biến tương tác |
 | `src/linreg/data.py` | Đọc CSV, thêm đặc trưng, chia train/test |
-| `src/linreg/models.py` | `MODELS`: 5 mô hình sklearn (M1, M3h OLS/Ridge/Bayesian, M8b) |
-| `src/linreg/inference.py` | OLS statsmodels với HC3, kiểm định Breusch–Pagan |
-| `src/linreg/evaluate.py` | MAE, MSE, RMSE, R², CV, bảng hệ số |
+| `src/linreg/models.py` | `MODELS`: M1–M6, M8b, đặt tên theo mục 09 của moodboard |
+| `src/linreg/bayes.py` | Hồi quy Bayesian liên hợp Normal-Inverse-Gamma (M6): khoảng đáng tin, khoảng dự đoán |
+| `src/linreg/inference.py` | OLS statsmodels (HC3), F từng phần, Breusch–Pagan, Jarque–Bera |
+| `src/linreg/evaluate.py` | MAE, MSE, RMSE, R², CV, t-test Nadeau–Bengio, bảng hệ số |
 | `src/linreg/train.py` | Huấn luyện tất cả, ghi `models/` |
 | `app/streamlit_app.py` | Ứng dụng dự đoán CO₂ |
 | `notebooks/` | EDA và thí nghiệm, đánh số `01_eda.ipynb`, `02_…` |
@@ -47,7 +49,7 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Copilot, Cursor, 
 
 ```bash
 pip install -r requirements.txt        # cài phụ thuộc + package linreg
-pytest -q                              # kiểm tra pipeline trên dữ liệu thật
+pytest -q                              # kiểm tra pipeline, khớp số với moodboard
 python -m linreg.train                 # huấn luyện, ghi models/
 streamlit run app/streamlit_app.py     # chạy ứng dụng
 xelatex main.tex                       # biên dịch báo cáo
@@ -57,7 +59,7 @@ xelatex main.tex                       # biên dịch báo cáo
 
 - Python ≥ 3.10; mọi thứ ngẫu nhiên dùng `config.RANDOM_STATE`.
 - Tiền xử lý nằm **trong** `Pipeline` để không rò rỉ từ tập test.
-- Thêm mô hình: thêm một `ModelSpec` vào `MODELS` (kèm mô tả lý do), thêm công thức vào `inference.FORMULAS` nếu là OLS, chạy lại `pytest`.
+- Thêm mô hình: thêm một `ModelSpec` vào `MODELS` (kèm mô tả lý do); công thức statsmodels được sinh tự động nếu `ols=True`. Chạy lại `pytest`.
 - Hình cho báo cáo: sinh bằng code vào `figures/`, không chỉnh tay.
 - Báo cáo bằng tiếng Việt; tên biến, code, commit message bằng tiếng Anh.
 - Mỗi thay đổi đi qua branch + pull request, có ít nhất một thành viên khác review.

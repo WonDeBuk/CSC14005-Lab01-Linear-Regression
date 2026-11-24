@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 from . import config
 from .features import add_features
@@ -20,7 +20,7 @@ class Dataset:
 
 
 def load_frame(path: Path | None = None) -> pd.DataFrame:
-    """Raw data plus derived features, leakage columns removed."""
+    """Raw data plus derived features, leakage and constant columns removed."""
     path = Path(path or config.DATASET["file"])
     if not path.exists():
         raise FileNotFoundError(f"{path} not found. See data/README.md.")
@@ -28,11 +28,14 @@ def load_frame(path: Path | None = None) -> pd.DataFrame:
     return add_features(df)
 
 
+def split_indices(n: int) -> tuple[np.ndarray, np.ndarray]:
+    order = np.random.default_rng(config.RANDOM_STATE).permutation(n)
+    return order[: config.N_TRAIN], order[config.N_TRAIN :]
+
+
 def load_dataset(df: pd.DataFrame | None = None) -> Dataset:
     target = config.DATASET["target"]
     df = load_frame() if df is None else df
+    train, test = split_indices(len(df))
     X, y = df.drop(columns=[target]), df[target]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=config.TEST_SIZE, random_state=config.RANDOM_STATE
-    )
-    return Dataset(X_train, X_test, y_train, y_test, target)
+    return Dataset(X.iloc[train], X.iloc[test], y.iloc[train], y.iloc[test], target)

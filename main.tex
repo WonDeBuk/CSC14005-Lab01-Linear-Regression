@@ -56,48 +56,58 @@
 \listoffigures
 \clearpage
 
-\section{Giới thiệu}
+% Khung 8 chương theo mục 16 của moodboard (khoảng 19 trang). Số trang ở mỗi chương là mục tiêu.
+% Mọi số liệu lấy từ models/*.csv hoặc linreg.inference; phần diễn giải do thành viên tự viết.
+
+\section{Giới thiệu} % 1,5 trang -- mục 04, 07
+\subsection{Bối cảnh và động lực}
+% Phát thải CO2 của xe mới; vì sao ước tính từ thông số thiết kế có ích.
+\subsection{Mục tiêu và phạm vi}
+% Dự đoán CO2EMISSIONS (g/km) từ thông số thiết kế; không dùng mức tiêu thụ nhiên liệu.
 \subsection{Phân công công việc}
-% TODO(team): bảng thành viên - nhiệm vụ - mô hình phụ trách - mức độ hoàn thành.
-
+% TODO(team): bảng 1 -- thành viên, kênh mô hình (M1, M2, M3, Ridge, Bayesian), phần báo cáo.
 \subsection{Sử dụng công cụ AI}
-% TODO(team): nêu rõ công cụ AI đã dùng, cho việc gì, và cách nhóm kiểm tra lại nội dung.
+% TODO(team): công cụ AI đã dùng, cho việc gì, và cách nhóm kiểm tra lại nội dung.
 
-\section{Bài toán và động lực}
-% 3.1: động lực chọn bài toán; mục tiêu dự đoán; biến mục tiêu; các biến đầu vào.
+\section{Cơ sở lý thuyết} % 2 trang -- mục 05, 09
+\subsection{Hồi quy tuyến tính và bình phương tối thiểu}
+% Phương trình chuẩn, bốn giả định và cách kiểm tra.
+\subsection{Biến giả, tương tác và biến đổi}
+% Biến giả, tương tác, biến đổi log và hệ số smearing của Duan.
+\subsection{Ridge và hồi quy Bayesian}
+% Co rút L2 như MAP; prior Normal-Inverse-Gamma, posterior, khoảng đáng tin, khoảng dự đoán.
+\subsection{Chỉ số đánh giá và kiểm chứng chéo}
+% MAE, RMSE, R2, R2 hiệu chỉnh, AIC/BIC; CV 10-fold; t hiệu chỉnh Nadeau--Bengio.
 
-\section{Dữ liệu}
-\subsection{Nguồn và mô tả dữ liệu}
-% Nguồn (link), giấy phép, số mẫu, bảng mô tả các biến.
-\subsection{Phân tích khám phá dữ liệu}
-% Phân phối biến mục tiêu, tương quan, ngoại lệ, đa cộng tuyến. Hình từ notebooks/01_eda.ipynb.
+\section{Dữ liệu} % 3 trang -- mục 08 (P1--P9)
+\subsection{Nguồn và mô tả}
+% 1.067 xe x 13 cột, bảng mô tả biến.
+\subsection{Phân tích khám phá}
+% Phân phối CO2, tương quan, đa cộng tuyến (VIF), rò rỉ qua mức tiêu thụ nhiên liệu, xe flex-fuel.
 \subsection{Tiền xử lý}
-% Xử lý thiếu, mã hoá, chuẩn hoá, biến đổi; chia train/test (80/20, seed 42).
+% Mỗi bước: What, Why, How. Gom 16 hạng xe thành 5 nhóm, tách hộp số, cờ HYBRID, chia train/test.
 
-\section{Thiết kế mô hình}
-\subsection{Cơ sở lý thuyết}
-% OLS, Ridge, Lasso, Elastic Net, hàm cơ sở đa thức, biến đổi log mục tiêu, Huber.
-\subsection{Các mô hình xây dựng}
-% Mỗi mô hình: biến sử dụng, biến đổi, siêu tham số, lý do lựa chọn (yêu cầu 3.2).
+\section{Xây dựng mô hình} % 3 trang -- mục 06, 09, 12
+% M1 -> M8b theo thứ tự câu hỏi; mỗi mô hình: biến, lý do, kết quả.
+% Bảng 2: hệ số M3h với KTC t, HC3 và bootstrap.
 
-\section{Đánh giá và so sánh}
-\subsection{Chỉ số đánh giá}
-% MAE, MSE, RMSE, R^2, cross-validation.
-\subsection{Kết quả}
-% Bảng từ models/metrics.csv; phân tích phần dư.
-\subsection{Diễn giải hệ số}
-% Chỉ dựa trên kết quả mô hình (yêu cầu 3.3), không dùng kiến thức miền bên ngoài.
-\subsection{Câu hỏi thống kê và kiểm định}
-% Mỗi câu: H0, phép kiểm định (HC3 / Nadeau--Bengio / ghép cặp), số liệu, quyết định,
-% mục tương ứng trong sách của thầy Lên. Ví dụ: nghịch lý Simpson của E85.
-\subsection{Góc nhìn Bayesian}
-% Prior, posterior, khoảng đáng tin so với khoảng tin cậy; ảnh hưởng của prior theo cỡ mẫu.
+\section{Đánh giá và so sánh} % 4 trang -- mục 09--12
+\subsection{So sánh các mô hình}
+% Bảng 3: train, CV 10-fold, test cho mọi mô hình (models/metrics.csv).
+\subsection{Kiểm định giữa các mô hình}
+% F từng phần, Nadeau--Bengio.
+\subsection{Phân tích phần dư và độ bền vững}
+% Residual plot, Q--Q, Breusch--Pagan, Jarque--Bera, Cook; đường cong học, bias--variance.
 
-\section{Ứng dụng}
-% Tính năng, giao diện (ảnh chụp màn hình), đầu vào/đầu ra, cách tích hợp mô hình đã huấn luyện, link video demo.
+\section{Diễn giải hệ số và câu hỏi thống kê} % 2 trang -- mục 13, 12.8
+% Chỉ dựa trên kết quả mô hình (đề bài 3.3). Mỗi câu: H0, phép kiểm định, số liệu, quyết định,
+% mục tương ứng trong sách của thầy Lên. Gồm nghịch lý Simpson của E85 và đối chiếu Bayesian.
 
-\section{Kết luận}
-% Kết quả chính, hạn chế, hướng cải tiến.
+\section{Ứng dụng} % 1,5 trang -- mục 14
+% Tính năng, giao diện, đầu vào/đầu ra, cách nạp mô hình; 2--3 ảnh chụp màn hình; link video demo.
+
+\section{Kết luận} % 1 trang -- mục 15
+% Tóm tắt kết quả, hạn chế, hướng phát triển.
 
 \nocite{*}
 \bibliographystyle{plainnat}

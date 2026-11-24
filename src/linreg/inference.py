@@ -1,27 +1,38 @@
-"""Frequentist inference on the OLS models (t/F tests, confidence intervals).
+"""Frequentist inference on the OLS models: t/F tests, confidence intervals, diagnostics.
 
-Residuals are heteroscedastic (Breusch-Pagan), so tests use HC3 robust
-standard errors by default.
+Formulas are generated from MODELS so the statsmodels fit uses exactly the same
+design as the sklearn pipeline. Residuals are heteroscedastic (Breusch-Pagan),
+so coefficient tests use HC3 robust standard errors by default.
 """
 
 import statsmodels.formula.api as smf
+from statsmodels.stats.anova import anova_lm
 from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.stattools import jarque_bera
 
-DESIGN = (
-    "ENGINESIZE + CYLINDERS + HYBRID"
-    " + C(FUELTYPE, Treatment('X')) + C(BODY, Treatment('car')) + C(TRANS_TYPE, Treatment('A'))"
-)
-FORMULAS = {
-    "m1_engine": "CO2EMISSIONS ~ ENGINESIZE",
-    "m3h_ols": f"CO2EMISSIONS ~ {DESIGN}",
-    "m8b_interactions": f"CO2EMISSIONS ~ {DESIGN} + ENGINE_X_PICKUP + ENGINE_X_VAN + ENGINE_X_HYBRID",
-}
+from . import config
+from .features import REFERENCE
+from .models import MODELS
 
 
-def fit_ols(df, name="m3h_ols", cov_type="HC3"):
-    return smf.ols(FORMULAS[name], data=df).fit(cov_type=cov_type)
+def formula(name: str) -> str:
+    spec = MODELS[name]
+    if not spec.ols:
+        raise ValueError(f"{name} has no OLS formula")
+    terms = spec.numeric + [f"C({c}, Treatment('{REFERENCE[c]}'))" for c in spec.categorical]
+    return f"{config.DATASET['target']} ~ " + " + ".join(terms)
 
 
-def breusch_pagan(result) -> dict[str, float]:
-    lm, lm_p, f, f_p = het_breuschpagan(result.resid, result.model.exog)
-    return {"LM": lm, "LM_p": lm_p, "F": f, "F_p": f_p}
+def fit_ols(df, name: str = "M3h", cov_type: str = "HC3"):
+    return smf.ols(formula(name), data=df).fit(cov_type=cov_type)
+
+
+def partial_f_test(df, small: str, large: str):
+    """F test of nested models (classical errors), e.g. M3 -> M3h."""
+    return anova_lm(fit_ols(df, small, "nonrobust"), fit_ols(df, large, "nonrobust"))
+
+
+def residual_diagnostics(result) -> dict[str, float]:
+    _, bp_p, bp_f, _ = het_breuschpagan(result.resid, result.model.exog)
+    jb, jb_p, _, _ = jarque_bera(result.resid)
+    return {"breusch_pagan_LM_p": bp_p, "breusch_pagan_F": bp_f, "jarque_bera": jb, "jarque_bera_p": jb_p}

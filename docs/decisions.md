@@ -1,27 +1,32 @@
 # Quyết định và việc còn mở
 
-Tổng hợp từ moodboard của nhóm ("Mission LR-01", [artifact](https://claude.ai/artifact/95knfAAW2ceeRQWnin9HKj)) và hai phiên chat với Claude (22–23/11/2026). Moodboard là nơi phân tích chi tiết; repo này là nơi chạy lại và tái lập.
+Tổng hợp từ moodboard của nhóm ("Mission LR-01", [artifact](https://claude.ai/artifact/95knfAAW2ceeRQWnin9HKj), bản `lr01-moodboard.html` ngày 24/11/2026) và hai phiên chat với Claude (22–23/11/2026). Moodboard là nơi phân tích chi tiết; repo này tái hiện từng con số của nó bằng code và test.
 
 ## Đã quyết
 
-| Chủ đề | Quyết định |
-|--------|-----------|
-| Dataset | CO₂ Canada 2014, 1.067 xe (chọn từ 12 bộ đã khảo sát; dự phòng: Medical Cost, Ames Housing) |
-| Biến mục tiêu | `CO2EMISSIONS` (g/km) |
-| Loại bỏ | Cột tiêu thụ nhiên liệu (rò rỉ: tỉ số CO₂/nhiên liệu cố định 23 cho xăng, 27 cho diesel, 16 cho E85) |
-| Cờ hybrid | Sửa nhãn cho 10 xe bị sót (Lexus "…h", Prius, CR-Z): hệ số hybrid −44,5 → −48,3 g/km, BIC giảm 35 |
-| Mô hình chính | M3h: động cơ, xi-lanh, nhiên liệu, nhóm thân xe, hộp số, hybrid |
-| Mô hình mở rộng | M8b = M3h + dung tích × (bán tải, van, hybrid); p = 0,048 so với M3h, lạc quan vì tương tác được tìm trên chính tập train |
-| Hai trường phái | OLS (Frequentist) đặt cạnh Ridge và hồi quy Bayesian; với 854 xe cả hai gần trùng OLS, prior chỉ ảnh hưởng rõ trên mẫu con 40 xe |
-| Kiểm định | HC3 và bootstrap cho hệ số; Nadeau–Bengio cho so sánh CV |
-| Phát hiện chính | Nghịch lý Simpson: E85 có CO₂ trung bình thô cao nhất, nhưng khi giữ các yếu tố khác không đổi thì thải ít hơn ≈ 18 g/km (xác nhận bằng hồi quy, Bayesian, và kiểm định ghép cặp trên 78 xe flex-fuel) |
-| Ứng dụng | Xưởng xe 3D pixel (three.js, Kenney Car Kit CC0) trên moodboard; repo có thêm bản Streamlit |
+| Chủ đề | Quyết định | Mục moodboard |
+|--------|-----------|---------------|
+| Dataset | CO₂ Canada 2014, 1.067 xe (chọn từ 12 bộ đã khảo sát) | 02–04, 07 |
+| Mục tiêu | Ước tính CO₂ (g/km) chỉ từ thông số thiết kế; cực tiểu RMSE ngoài mẫu mà vẫn diễn giải được; trả lời có kiểm định "quyết định thiết kế nào đổi thành bao nhiêu gam CO₂" | 07 |
+| Loại cột | `MODELYEAR` (hằng), `FUELCONSUMPTION_*` (rò rỉ: CO₂/COMB = 23 xăng, 27 diesel, 16 E85) | 08 P1–P2 |
+| Xe flex-fuel | Giữ cả hai dòng của 78 cặp xe; dùng làm kiểm định t ghép cặp cho E85; ghi hạn chế về tính độc lập | 08 P3 |
+| Biến mục tiêu | Giữ CO₂ gốc (log không cải thiện, xem M4log) | 08 P4, 09 |
+| Nhóm thân xe | 5 nhóm, tham chiếu Xe nhỏ | 08 P5 |
+| Hộp số | Kiểu (tham chiếu A) + số cấp + cờ NOGEAR cho xe vô cấp | 08 P6 |
+| Đa cộng tuyến | Giữ cả dung tích và xi-lanh (VIF 9,7 và 9,6 < 10), diễn giải thận trọng | 08 P7 |
+| Cờ hybrid | Sửa nhãn cho 10 xe bị sót (Lexus "…h", Prius, CR-Z): hệ số −44,5 → −48,3 g/km, BIC giảm 35 | 08 P8, 12.8 |
+| Chia dữ liệu | `default_rng(42).permutation`, train 854, test 213; chọn mô hình bằng CV, mở test một lần | 08 P9 |
+| Tên mô hình | Theo mục 09 (M1–M7), mục 16 cũng đề xuất dùng bộ này | 09, 16 |
+| Phương sai thay đổi | Breusch–Pagan bác bỏ; dùng SE HC3 và bootstrap; WLS và log không sửa được | 09, 12 |
+| So sánh CV | t-test hiệu chỉnh Nadeau–Bengio | 10.2 |
+| Mô hình phi tuyến | Gaussian Process chỉ là mốc trần, không tính vào số mô hình | 12 |
+| Khung báo cáo | 8 chương, khoảng 19 trang (đã đưa vào `main.tex`) | 16 |
 
 ## Việc còn mở
 
-- [ ] **Thống nhất tên mô hình.** Mục 06 của moodboard gọi Ridge là M4 và Bayesian là M5; mục 09 gọi là M5 và M6. Repo dùng tên mã (`m1_engine`, `m3h_ols`, `m3h_ridge`, `m3h_bayes`, `m8b_interactions`) cho đến khi nhóm chốt.
-- [ ] **Đối chiếu nhóm thân xe và phép chia với moodboard.** Repo gom 16 hạng xe thành car/wagon/suv/pickup/van và chia bằng `train_test_split(test_size=213, random_state=42)`. Kết quả gần với moodboard nhưng chưa khớp từng số (ví dụ CV RMSE M3h 23,07 so với 23,09–23,26), nên cách gom nhóm hoặc cách chia có thể khác. Cần chép script `analysis/` từ phiên moodboard vào repo để khớp số.
-- [ ] **Ứng dụng dùng M3h hay M8b.** Moodboard vẫn chạy M3h với cờ hybrid cũ.
-- [ ] **Khoảng dự đoán 95% quá hẹp ở nhóm xe thải nhiều** (phủ 93,9% tập test nói chung, chỉ 87% ở nhóm cao nhất).
+- [ ] **Mô hình cuối: M3h hay M8b.** M8b có RMSE test 22,6 và BIC thấp nhất nhưng các tương tác được tìm trên chính tập train (p = 0,048 so với M3h cờ cũ, lạc quan). Repo đang để ứng dụng mặc định M8b (`APP_MODEL` trong `src/linreg/train.py`); moodboard mục 14 vẫn chạy M3h cờ cũ.
+- [ ] **Phân công 5 kênh mô hình** (mục 06 và bảng phân công mục 16): M1, M2, M3 (gồm M3h, M4, M4log), Ridge (M5), Bayesian (M6). Điền vào cột "Mô hình phụ trách" trong `README.md`.
+- [ ] **Khoảng dự đoán 95% quá hẹp ở nhóm xe thải nhiều** (phủ 93,9% tập test nói chung, chỉ 87% ở nhóm cao nhất). Ứng dụng Streamlit đang dùng khoảng xấp xỉ ±1,96·σ̂ và có ghi chú điều này.
 - [ ] **Mức Bayesian thầy mong đợi.** Đề Lab 01 không nhắc Bayesian; cần xác nhận với thầy.
-- [ ] **Phân công:** mỗi thành viên phụ trách một mô hình (bảng trong `README.md`).
+- [ ] **Chuyển phần còn lại của moodboard thành code:** kiểm định ghép cặp 78 xe flex-fuel, bootstrap hệ số, đường cong học, bias–variance, độ bền theo tỉ lệ chia và nhiễu, 20 câu hỏi kiểm định (mục 10, 11, 13).
+- [ ] **Ứng dụng nộp bài:** xưởng xe 3D trên moodboard (three.js) hay bản Streamlit trong repo, hoặc cả hai.

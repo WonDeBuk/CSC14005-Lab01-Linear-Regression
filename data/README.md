@@ -16,16 +16,19 @@ File đã được commit tại `data/raw/FuelConsumptionCo2.csv` để link d�
 
 | Cột | Ý nghĩa | Dùng làm đầu vào |
 |-----|---------|------------------|
-| `MODELYEAR`, `MAKE`, `MODEL` | Năm, hãng, mẫu xe | Không (chỉ dùng để gắn cờ hybrid) |
-| `VEHICLECLASS` | 16 hạng xe → gom thành 5 nhóm `BODY`: car, wagon, suv, pickup, van | Có, qua `BODY` |
+| `MODELYEAR` | Năm, chỉ có 2014 (cột hằng) | Không, bị loại |
+| `MAKE`, `MODEL` | Hãng, mẫu xe | Không (chỉ dùng để gắn cờ hybrid) |
+| `VEHICLECLASS` | 16 hạng xe → 5 nhóm `BODY`: small (xe nhỏ, tham chiếu), midlarge (sedan/wagon trung-lớn), suv, pickup, van (van & đặc dụng) | Có, qua `BODY` |
 | `ENGINESIZE` | Dung tích động cơ (L) | Có |
 | `CYLINDERS` | Số xi-lanh | Có |
-| `TRANSMISSION` | Ví dụ `AS6` → `TRANS_TYPE` = AS, `GEARS` = 6 | Có, qua `TRANS_TYPE` |
+| `TRANSMISSION` | Ví dụ `AS6` → `TRANS_TYPE` = AS, `GEARS` = 6. 46 xe `AV` (vô cấp) không ghi số cấp → `GEARS` = 0, `NOGEAR` = 1 | Có, qua `TRANS_TYPE`, `GEARS`, `NOGEAR` |
 | `FUELTYPE` | X xăng thường, Z xăng cao cấp, D diesel, E ethanol E85 | Có |
 | `FUELCONSUMPTION_*` (4 cột) | Mức tiêu thụ nhiên liệu | **Không: rò rỉ dữ liệu.** CO₂ được quy đổi trực tiếp từ mức tiêu thụ theo tỉ lệ cố định cho từng loại nhiên liệu |
 | `CO2EMISSIONS` | Phát thải CO₂ (g/km) | Biến mục tiêu |
 
-Cờ `HYBRID` (34 xe) gắn khi tên mẫu xe chứa "HYBRID", hoặc là Prius, CR-Z, hoặc Lexus có đuôi "h" (CT 200h, ES 300h, GS 450h, LS 600h L, RX 450h). Mã: `src/linreg/features.py`.
+Các bước xử lý theo mục 08 (P1–P9) của moodboard. Chia dữ liệu: `np.random.default_rng(42).permutation`, 854 dòng đầu là train, 213 dòng sau là test.
+
+Cờ `HYBRID` (34 xe) gắn khi tên mẫu xe chứa "HYBRID", hoặc là Prius, CR-Z, hoặc Lexus có đuôi "h" (CT 200h, ES 300h, GS 450h, LS 600h L, RX 450h). Cờ cũ của mục 09 (chỉ dựa vào chữ "HYBRID", 24 xe) vẫn giữ ở cột `HYBRID_NAME` để tái hiện kết quả trước khi sửa. Mã: `src/linreg/features.py`.
 
 ## Hạn chế
 
